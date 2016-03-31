@@ -431,7 +431,7 @@ void ExactCheckOpt::optimizeAll(Module &M, CheckInfoType *Info,
   for (Value::use_iterator UI = CheckFn->use_begin(), E = CheckFn->use_end();
         UI != E;
         ++UI) {
-    if (CallInst *CI = dyn_cast<CallInst>(*UI)) {
+    if (CallInst *CI = dyn_cast<CallInst>(UI->getUser())) {
       if (optimizeCheck(CI, Info))
         Converted.push_back(CI);
     }

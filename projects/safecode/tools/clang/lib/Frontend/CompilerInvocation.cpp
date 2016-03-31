@@ -675,6 +675,17 @@ static bool ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args, InputKind IK,
   Opts.CudaGpuBinaryFileNames =
       Args.getAllArgValues(OPT_fcuda_include_gpubinary);
 
+  // Memory Safety Options
+  Opts.MemSafety = Args.hasArg(OPT_memsafety);
+  Opts.BaggyBounds = Args.hasArg(OPT_bbc);
+  Opts.SoftBound = Args.hasArg(OPT_softbound);
+  Opts.MemSafeTerminate = Args.hasArg(OPT_terminate);
+  if (Arg *A = Args.getLastArg(OPT_msLogFile)) {
+    Opts.MemSafetyLogFile = A->getValue();
+  } else {
+    Opts.MemSafetyLogFile = "";
+  }
+
   return Success;
 }
 

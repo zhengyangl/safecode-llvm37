@@ -201,6 +201,9 @@ public:
   /// Set of sanitizer checks that trap rather than diagnose.
   SanitizerSet SanitizeTrap;
 
+  /// The filename to use for logging memory safety violations
+  std::string MemSafetyLogFile;
+
 public:
   // Define accessors/mutators for code generation options of enumeration type.
 #define CODEGENOPT(Name, Bits, Default)

@@ -95,7 +95,7 @@ llvm::InlineFastChecks::inlineCheck (Function * F) {
     // We are only concerned about call instructions; any other use is of
     // no interest to the organization.
     //
-    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
+    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
       //
       // If the call instruction has no uses, we can remove it.
       //

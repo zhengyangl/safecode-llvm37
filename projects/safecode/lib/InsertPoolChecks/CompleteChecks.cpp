@@ -178,7 +178,7 @@ CompleteChecks::makeCStdLibCallsComplete (Function *F,
   //
   for (; U != E; ++U) {
     CallInst *CI;
-    if ((CI = dyn_cast<CallInst>(*U)) &&
+    if ((CI = dyn_cast<CallInst>(U->getUser())) &&
          CI->getCalledValue()->stripPointerCasts() == F) {
 
       uint8_t vector = 0x0;
@@ -287,7 +287,7 @@ CompleteChecks::makeComplete (Module & M, const struct CheckInfo & CheckInfo) {
   Value::use_iterator UI = Incomplete->use_begin();
   Value::use_iterator  E = Incomplete->use_end();
   for (; UI != E; ++UI) {
-    if (CallInst * CI = dyn_cast<CallInst>(*UI)) {
+    if (CallInst * CI = dyn_cast<CallInst>(UI->getUser())) {
       if (CI->getCalledValue()->stripPointerCasts() == Incomplete) {
         //
         // Get the pointer that is checked by this run-time check.
@@ -357,7 +357,7 @@ CompleteChecks::makeFSParameterCallsComplete(Module &M)
   for (Function::use_iterator i = sc_fsparameter->use_begin();
        i != sc_fsparameter->use_end(); ++i) {
     CallInst *CI;
-    CI = dyn_cast<CallInst>(*i);
+    CI = dyn_cast<CallInst>(i->getUser());
     if (CI == 0 || CI->getCalledFunction() != sc_fsparameter)
       continue;
 
@@ -562,7 +562,7 @@ CompleteChecks::fixupCFIChecks (Module & M, std::string name) {
   Value::use_iterator UI = FuncCheck->use_begin();
   Value::use_iterator  E = FuncCheck->use_end();
   for (; UI != E; ++UI) {
-    if (CallInst * CI = dyn_cast<CallInst>(*UI)) {
+    if (CallInst * CI = dyn_cast<CallInst>(UI->getUser())) {
       if (CI->getCalledValue()->stripPointerCasts() == FuncCheck) {
         //
         // Get the call instruction following this call instruction.

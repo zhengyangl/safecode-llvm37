@@ -71,7 +71,7 @@ UnusedCheckElimination::runOnModule (Module & M) {
         // casts because the cast may have no uses but the pointer it comes
         // from may have uses (other than the casts).
         //
-        CallInst * CI = cast<CallInst>(*I);
+        CallInst * CI = cast<CallInst>(I->getUser());
         if (Value * CheckedPointer = intrinsic->getValuePointer(CI)) {
           CheckedPointer = CheckedPointer->stripPointerCasts();
 

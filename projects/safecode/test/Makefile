@@ -8,8 +8,11 @@
 # The default target in this directory is the test:: target
 test::
 
-LEVEL = ..
+LEVEL = ../../..
 include $(LEVEL)/Makefile.common
+
+PROJ_SRC_ROOT = $(LLVM_SRC_ROOT)/projects/safecode
+PROJ_OBJ_ROOT = $(LLVM_OBJ_ROOT)/projects/safecode
 
 ifndef NO_STABLE_NUMBERS
 STABLERUN := GET_STABLE_NUMBERS=1
@@ -459,8 +462,8 @@ cputrack::
 				lit-bodiagsuite
 
 # Path to SAFECode libraries
-SC_LIB := $(PROJ_OBJ_ROOT)/$(BuildMode)/lib
-SC_BIN := $(PROJ_OBJ_ROOT)/$(BuildMode)/bin/clang
+SC_LIB := $(LLVM_OBJ_ROOT)/$(BuildMode)/lib
+SC_BIN := $(LLVM_OBJ_ROOT)/$(BuildMode)/bin/clang
 
 SETENV = TARGET_TRIPLE=$(TARGET_TRIPLE)           \
          PYTHON=$(PYTHON)                         \

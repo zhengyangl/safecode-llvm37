@@ -358,10 +358,10 @@ bool TypeChecks::runOnModule(Module &M) {
           // replace the use specified in ReplaceWorklist.
           //
           if(isa<ConstantArray>(C)) {
-              C->replaceUsesOfWithOnConstant(F, CNew, ReplaceWorklist[0]);
+              C->handleOperandChange(F, CNew, ReplaceWorklist[0]);
           } else {
             for (unsigned index = 0; index < ReplaceWorklist.size(); ++index) {
-              C->replaceUsesOfWithOnConstant(F, CNew, ReplaceWorklist[index]);
+              C->handleOperandChange(F, CNew, ReplaceWorklist[index]);
             }
           }
           continue;

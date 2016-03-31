@@ -109,7 +109,7 @@ removeUnusedRegistrations (Function * F, std::set<Value *> & SafeValues) {
   for (Value::use_iterator UI=F->use_begin(), UE=F->use_end();
        UI != UE;
        ++UI) {
-    CallSite CS (cast<CallInst>(*UI));
+    CallSite CS (cast<CallInst>(UI->getUser()));
     if (CS.getInstruction()) {
       if (isSafeToRemove (CS.getArgument (2), SafeValues)) {
         toBeRemoved.push_back(CS.getInstruction());

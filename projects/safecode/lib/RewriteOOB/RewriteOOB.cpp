@@ -113,7 +113,7 @@ RewriteOOB::processFunction (Module & M, const CheckInfo & Check) {
     // We are only concerned about call instructions; any other use is of
     // no interest to the organization.
     //
-    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
+    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
       //
       // Get the operand that needs to be replaced as well as the operand
       // with all of the casts peeled away.  Increment the operand index by
@@ -174,7 +174,7 @@ RewriteOOB::processFunction (Module & M, const CheckInfo & Check) {
       std::vector<User *> Uses;
       Value::use_iterator UI = PeeledOperand->use_begin();
       for (; UI != PeeledOperand->use_end(); ++UI) {
-        if (Instruction * Use = dyn_cast<Instruction>(*UI)) {
+        if (Instruction * Use = dyn_cast<Instruction>(UI->getUser())) {
           if (Use->getParent()->getParent() == CurrentFunction) {
             if (isa<PHINode>(Use)) {
               if (inSameBlock) {

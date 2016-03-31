@@ -184,7 +184,7 @@ addStringCheck (Module & M, const std::string & name, unsigned argNo) {
     // Ensure the use is an instruction and that the instruction calls the
     // source function (as opposed to passing it as a parameter or other
     // possible uses).
-    CallSite CS (*UI);
+    CallSite CS (UI->getUser());
     if (!CS || CS.getCalledValue() != F)
       continue;
     callsToInstrument.push_back(&CS);
@@ -654,7 +654,7 @@ StringTransform::gtransform(Module &M,
   for (Value::use_iterator UI = src->use_begin(), UE = src->use_end();
        UI != UE;
        ++UI) {
-    CallSite CS(*UI);
+    CallSite CS(UI->getUser());
     // Ensure the use is an instruction and that the instruction calls the
     // source function (as opposed to passing it as a parameter or other
     // possible uses).

@@ -400,7 +400,7 @@ bool PoolAllocate::runOnModule(Module &M) {
           // Do replacements in the worklist.
           //
           for (unsigned index = 0; index < ReplaceWorklist.size(); ++index)
-            C->replaceUsesOfWithOnConstant(F, CEnew, ReplaceWorklist[index]);
+            C->handleOperandChange(F, CEnew, ReplaceWorklist[index]);
           continue;
         }
       }

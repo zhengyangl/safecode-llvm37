@@ -651,6 +651,24 @@ def fcuda_include_gpubinary : Separate<["-"], "fcuda-include-gpubinary">,
 
 } // let Flags = [CC1Option]
 
+//===----------------------------------------------------------------------===//
+// Memory Safety Options
+//===----------------------------------------------------------------------===//
+
+let Flags = [CC1Option, DriverOption] in {
+
+def memsafety : Flag<["-"], "fmemsafety">,
+  HelpText<"Instrument program with memory-safety checks">;
+def bbc : Flag<["-"], "bbc">,
+  HelpText<"Use Baggy Bounds Checking">;
+def msLogFile : Separate<["-"], "fmemsafety-logfile">,
+  MetaVarName<"<path>">, HelpText<"Specify memory safety checks log file">;
+def terminate : Flag<["-"], "fmemsafety-terminate">,
+  HelpText<"Terminate program on failed memory-safety checks">;
+def softbound: Flag<["-"], "fsoftbound">,
+  HelpText<"Instrument program with SoftBound+CETS style pointer based memory safety checks">;
+
+}
 
 //===----------------------------------------------------------------------===//
 // cc1as-only Options

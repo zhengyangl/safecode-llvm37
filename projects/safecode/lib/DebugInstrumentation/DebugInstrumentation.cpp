@@ -356,7 +356,7 @@ DebugInstrument::transformFunction (Function * F, GetSourceInfo & SI) {
   std::vector<CallInst *> Worklist;
   Function::use_iterator i, e;
   for (i = F->use_begin(), e = F->use_end(); i != e; ++i) {
-    if (CallInst * CI = dyn_cast<CallInst>(*i)) {
+    if (CallInst * CI = dyn_cast<CallInst>(i->getUser())) {
       Worklist.push_back (CI);
     }
   }

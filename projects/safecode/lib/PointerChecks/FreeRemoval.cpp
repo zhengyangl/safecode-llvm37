@@ -66,7 +66,7 @@ EmbeCFreeRemoval::checkPoolSSAVarUses(Function *F, Value *V,
          UI != UE; ++UI) {
       // Check that the use is nothing except a call to pool_alloc, pool_free
       // or pool_destroy
-      if (Instruction *I = dyn_cast<Instruction>(*UI)) {
+      if (Instruction *I = dyn_cast<Instruction>(UI->getUser())) {
         // For global pools, we need to check that only uses within the
         // function under consideration are checked.
         if (I->getParent()->getParent() != F)
@@ -75,7 +75,7 @@ EmbeCFreeRemoval::checkPoolSSAVarUses(Function *F, Value *V,
         continue;
       }
 
-      if (CallInst *CI = dyn_cast<CallInst>(*UI)) {
+      if (CallInst *CI = dyn_cast<CallInst>(UI->getUser())) {
         if (Function *calledF = dyn_cast<Function>(CI->getOperand(0))) {
           if (calledF == F) {
             int operandNo = 0;
@@ -127,19 +127,19 @@ EmbeCFreeRemoval::checkPoolSSAVarUses(Function *F, Value *V,
                 FuncFreedPools[calledF].end() && 
                 FuncDestroyedPools[calledF].find(formalParam) == 
                 FuncDestroyedPools[calledF].end()) {
-              FuncPoolFrees[V].insert(cast<Instruction>(*UI));
+              FuncPoolFrees[V].insert(cast<Instruction>(UI->getUser()));
             }
 
             // if the called function has undestroyed allocs in formalParam
             if (FuncAllocedPools[calledF].find(formalParam) != 
                 FuncAllocedPools[calledF].end()) {
-              FuncPoolAllocs[V].insert(cast<Instruction>(*UI));
+              FuncPoolAllocs[V].insert(cast<Instruction>(UI->getUser()));
             }
       
             // if the called function has a destroy in formalParam
             if (FuncDestroyedPools[calledF].find(formalParam) != 
                 FuncDestroyedPools[calledF].end()) {
-              FuncPoolDestroys[V].insert(cast<Instruction>(*UI));
+              FuncPoolDestroys[V].insert(cast<Instruction>(UI->getUser()));
             }
           } else {
             // external function
@@ -150,11 +150,11 @@ EmbeCFreeRemoval::checkPoolSSAVarUses(Function *F, Value *V,
               //             CI->getNext()); //taken care of in runtime library
               moduleChanged = true;
             } else if (calledF->getName() == PoolA) {
-              FuncPoolAllocs[V].insert(cast<Instruction>(*UI));
+              FuncPoolAllocs[V].insert(cast<Instruction>(UI->getUser()));
             } else if (calledF->getName() == PoolF) {
-              FuncPoolFrees[V].insert(cast<Instruction>(*UI));
+              FuncPoolFrees[V].insert(cast<Instruction>(UI->getUser()));
             } else if (calledF->getName() == PoolD) {
-              FuncPoolDestroys[V].insert(cast<Instruction>(*UI));
+              FuncPoolDestroys[V].insert(cast<Instruction>(UI->getUser()));
             } else if (calledF->getName() == PoolMUF) {
               // Ignore
             } else if (calledF->getName() == PoolCh) {
@@ -203,19 +203,19 @@ EmbeCFreeRemoval::checkPoolSSAVarUses(Function *F, Value *V,
                 FuncFreedPools[calledF].end() && 
                 FuncDestroyedPools[calledF].find(formalParam) == 
                 FuncDestroyedPools[calledF].end()) {
-              FuncPoolFrees[V].insert(cast<Instruction>(*UI));
+              FuncPoolFrees[V].insert(cast<Instruction>(UI->getUser()));
             }
 
             // if the called function has undestroyed allocs in formalParam
             if (FuncAllocedPools[calledF].find(formalParam) != 
                 FuncAllocedPools[calledF].end()) {
-              FuncPoolAllocs[V].insert(cast<Instruction>(*UI));
+              FuncPoolAllocs[V].insert(cast<Instruction>(UI->getUser()));
             }
             
             // if the called function has a destroy in formalParam
             if (FuncDestroyedPools[calledF].find(formalParam) != 
                 FuncDestroyedPools[calledF].end()) {
-              FuncPoolDestroys[V].insert(cast<Instruction>(*UI));
+              FuncPoolDestroys[V].insert(cast<Instruction>(UI->getUser()));
             }
           }
         }
@@ -233,7 +233,7 @@ void
 EmbeCFreeRemoval::propagateCollapsedInfo (Function *F, Value *V) {
   for (Value::use_iterator UI = V->use_begin(), UE = V->use_end();
        UI != UE; ++UI) {
-    if (CallInst *CI = dyn_cast<CallInst>(*UI)) {
+    if (CallInst *CI = dyn_cast<CallInst>(UI->getUser())) {
       if (Function *calledF = dyn_cast<Function>(CI->getOperand(0))) {
         if (calledF == F) {
           // Quick check for the common case
@@ -505,7 +505,7 @@ EmbeCFreeRemoval::insertNonCollapsedChecks (Function *Forig, Function *F,
       for (Value::use_iterator UI = NewPtr->use_begin(), UE = NewPtr->use_end();
            UI != UE; ++UI) {
         // If the use is the 2nd operand of store, insert a runtime check
-        if (StoreInst *StI = dyn_cast<StoreInst>(*UI)) {
+        if (StoreInst *StI = dyn_cast<StoreInst>(UI->getUser())) {
           if (StI->getOperand(1) == NewPtr) {
             moduleChanged = true;
             Value * CastPH = castTo(PAFI->PoolDescriptors[DSN], VoidPtrTy, "", StI);
@@ -514,7 +514,7 @@ EmbeCFreeRemoval::insertNonCollapsedChecks (Function *Forig, Function *F,
             CallInst::Create(PoolCheck, args.begin(), args.end(), "", StI);
             std::cerr << " inserted poolcheck for noncollapsed pool\n";
           }
-        } else if (CallInst *CallI = dyn_cast<CallInst>(*UI)) {
+        } else if (CallInst *CallI = dyn_cast<CallInst>(UI->getUser())) {
           // If this is a function pointer read from a collapsed node,
           // reject the code
           if (CallI->getOperand(0) == NewPtr) {
@@ -522,7 +522,7 @@ EmbeCFreeRemoval::insertNonCollapsedChecks (Function *Forig, Function *F,
               "EmbeC: Error - Function pointer read from collapsed node\n";
             abort();
           }
-        } else if (LoadInst *LdI = dyn_cast<LoadInst>(*UI)) {
+        } else if (LoadInst *LdI = dyn_cast<LoadInst>(UI->getUser())) {
           if (LdI->getOperand(0) == NewPtr) {
             moduleChanged = true;
             Value *CastPH = castTo (PAFI->PoolDescriptors[DSN], VoidPtrTy, "", LdI);
@@ -571,14 +571,14 @@ EmbeCFreeRemoval::addRuntimeChecks(Function *F, Function *Forig) {
     continue;
   for (Value::use_iterator UI = NewPtr->use_begin(), 
          UE = NewPtr->use_end(); UI != UE; ++UI) {
-    if (StoreInst *StI = dyn_cast<StoreInst>(*UI)) {
+    if (StoreInst *StI = dyn_cast<StoreInst>(UI->getUser())) {
       if (StI->getOperand(1) == NewPtr) {
         guessPoolPtrAndInsertCheck(PAFI, SMI->first, StI, NewPtr, oldG);
         std::cerr << 
     "EmbeC: In function " << F->getName() << ": Presence of an unknown node can invalidate pool allocation\n";
         break;
       }
-    } else if (LoadInst *LI = dyn_cast<LoadInst>(*UI)) {
+    } else if (LoadInst *LI = dyn_cast<LoadInst>(UI->getUser())) {
       //We'll try to guess a pool descriptor and insert a check
       //if it fails then ok too bad ;)
       //Add guess the pool handle
@@ -586,7 +586,7 @@ EmbeCFreeRemoval::addRuntimeChecks(Function *F, Function *Forig) {
       std::cerr << 
         "EmbeC: In function " << F->getName() << ": Presence of an unknown node can invalidate pool allocation\n";
       break;
-    } else if (CallInst *CallI = dyn_cast<CallInst>(*UI)) {
+    } else if (CallInst *CallI = dyn_cast<CallInst>(UI->getUser())) {
         // If this is a function pointer read from a collapsed node,
         // reject the code
         if (CallI->getOperand(0) == NewPtr) {
@@ -623,7 +623,7 @@ EmbeCFreeRemoval::addRuntimeChecks(Function *F, Function *Forig) {
     for (Value::use_iterator UI = NewPtr->use_begin(), 
      UE = NewPtr->use_end(); UI != UE; ++UI) {
       // If the use is the 2nd operand of store, insert a runtime check
-      if (StoreInst *StI = dyn_cast<StoreInst>(*UI)) {
+      if (StoreInst *StI = dyn_cast<StoreInst>(UI->getUser())) {
         if (StI->getOperand(1) == NewPtr) {
     if (!isa<GlobalVariable>(StI->getOperand(1))) { 
       moduleChanged = true;
@@ -638,7 +638,7 @@ EmbeCFreeRemoval::addRuntimeChecks(Function *F, Function *Forig) {
       std::cerr << "WARNING DID not insert a check for collapsed global store";
     }
         }
-      } else if (CallInst *CallI = dyn_cast<CallInst>(*UI)) {
+      } else if (CallInst *CallI = dyn_cast<CallInst>(UI->getUser())) {
         // If this is a function pointer read from a collapsed node,
         // reject the code
         if (CallI->getOperand(0) == NewPtr) {
@@ -646,7 +646,7 @@ EmbeCFreeRemoval::addRuntimeChecks(Function *F, Function *Forig) {
       "EmbeC: Error - Function pointer read from collapsed node\n";
     abort();
         }
-      } else if (LoadInst *LdI = dyn_cast<LoadInst>(*UI)) {
+      } else if (LoadInst *LdI = dyn_cast<LoadInst>(UI->getUser())) {
         if (LdI->getOperand(0) == NewPtr) {
     if (!isa<GlobalVariable>(LdI->getOperand(0))) { 
       moduleChanged = true;

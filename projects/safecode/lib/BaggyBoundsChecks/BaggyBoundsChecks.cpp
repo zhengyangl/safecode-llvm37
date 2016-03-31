@@ -354,7 +354,7 @@ InsertBaggyBoundsChecks::adjustAllocasFor (Function * F) {
   // Scan through all uses of the function and process any allocas used by it.
   //
   for (Value::use_iterator FU = F->use_begin(); FU != F->use_end(); ++FU) {
-    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
+    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
       Value * Ptr = CI->getArgOperand(1)->stripPointerCasts();
       if (AllocaInst * AI = dyn_cast<AllocaInst>(Ptr)){
         adjustAlloca (AI);
@@ -389,7 +389,7 @@ InsertBaggyBoundsChecks::adjustArgv (Function * F) {
     std::vector<User *> Uses;
     Value::use_iterator UI = Argv->use_begin();
     for (; UI != Argv->use_end(); ++UI) {
-      if (Instruction * Use = dyn_cast<Instruction>(*UI))
+      if (Instruction * Use = dyn_cast<Instruction>(UI->getUser()))
         if (CI != Use) {
           Uses.push_back (UI->getUser());
         }
@@ -919,7 +919,7 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
   //
   for (Value::use_iterator FU = F->use_begin(), FE = F->use_end();
        FU != FE; ++FU) {
-    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
+    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
       if (CI->getCalledFunction() == F) {
         Function *Caller = CI->getParent()->getParent();
         Instruction *InsertPoint;

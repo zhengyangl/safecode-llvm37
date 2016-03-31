@@ -355,14 +355,14 @@ escapesToMemory (Value * V) {
       // in the def-use chain, and we're not handling such cycles at the
       // moment.
       //
-      if (isa<PHINode>(*UI)) {
+      if (isa<PHINode>(UI->getUser())) {
         return true;
       }
 
       //
       // The pointer escapes if it's stored to memory somewhere.
       //
-      if (StoreInst * SI = dyn_cast<StoreInst>(*UI)) {
+      if (StoreInst * SI = dyn_cast<StoreInst>(UI->getUser())) {
         if (SI->getValueOperand() == V)
           return true;
         else
@@ -374,15 +374,15 @@ escapesToMemory (Value * V) {
       // is that the exactcheck() optimization can't trace back through a
       // select.
       //
-      if (isa<SelectInst>(*UI)) {
+      if (isa<SelectInst>(UI->getUser())) {
         return true;
       }
 
       //
       // GEP instructions are okay but need to be added to the worklist.
       //
-      if (isa<GetElementPtrInst>(*UI)) {
-        Worklist.push_back (*UI);
+      if (isa<GetElementPtrInst>(UI->getUser())) {
+        Worklist.push_back (UI->getUser());
         continue;
       }
 
@@ -390,23 +390,23 @@ escapesToMemory (Value * V) {
       // Cast instructions are okay even if they lose bits.  Some of the bits
       // will end up in the result.
       //
-      if (isa<CastInst>(*UI)) {
-        Worklist.push_back (*UI);
+      if (isa<CastInst>(UI->getUser())) {
+        Worklist.push_back (UI->getUser());
         continue;
       }
 
       //
       // Constant expressions are okay, too.
       //
-      if (isa<ConstantExpr>(*UI)) {
-        Worklist.push_back (*UI);
+      if (isa<ConstantExpr>(UI->getUser())) {
+        Worklist.push_back (UI->getUser());
         continue;
       }
 
       //
       // Load instructions are okay.
       //
-      if (isa<LoadInst>(*UI)) {
+      if (isa<LoadInst>(UI->getUser())) {
         continue;
       }
 
@@ -415,7 +415,7 @@ escapesToMemory (Value * V) {
       // called function.  Otherwise, assume they call a function that allows
       // the pointer to escape into memory.
       //
-      if (CallInst * CI = dyn_cast<CallInst>(*UI)) {
+      if (CallInst * CI = dyn_cast<CallInst>(UI->getUser())) {
         if (!(CI->getCalledFunction())) {
           return true;
         }
@@ -427,7 +427,7 @@ escapesToMemory (Value * V) {
             (FuncName == "exactcheck2_debug") ||
             (FuncName == "boundscheck_debug") ||
             (FuncName == "boundscheckui_debug")) {
-          Worklist.push_back (*UI);
+          Worklist.push_back (UI->getUser());
           continue;
         } else if ((FuncName == "llvm.memcpy.i32")    || 
                    (FuncName == "llvm.memcpy.i64")    ||
@@ -498,4 +498,3 @@ removeInvokeUnwindPHIs(InvokeInst* Invoke) {
 }
 
 #endif
-

@@ -38,7 +38,7 @@ bool LoggingFunctions::runOnModule(Module &M) {
     Value::use_iterator vaStartEnd = vaStart->use_end();
     // Find all va_start() call sites within vararg functions.
     for (; vaStartUse != vaStartEnd; ++vaStartUse) {
-      CallSite CS(*vaStartUse);
+      CallSite CS(vaStartUse->getUser());
       // Only concern ourselves with direct calls to va_start().
       if (!CS || CS.getCalledFunction() != vaStart)
         continue;
@@ -85,7 +85,7 @@ bool LoggingFunctions::runOnModule(Module &M) {
     Value::use_iterator vaCopyEnd = vaCopy->use_end();
     // Find all va_start() call sites within vararg functions.
     for (; vaCopyUse != vaCopyEnd; ++vaCopyUse) {
-      CallSite CS(*vaCopyUse);
+      CallSite CS(vaCopyUse->getUser());
       // Only concern ourselves with direct calls to va_copy().
       if (!CS || CS.getCalledFunction() != vaCopy)
         continue;

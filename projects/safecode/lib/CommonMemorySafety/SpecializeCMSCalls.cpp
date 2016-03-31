@@ -108,7 +108,7 @@ void SpecializeCMSCalls::specialize(Module &M, StringRef Before,
         UI != E;
         ++UI) {
     // Only call instructions are supposed to exist.
-    CallInst *CI = cast<CallInst>(*UI);
+    CallInst *CI = cast<CallInst>(UI->getUser());
 
     IRBuilder<> Builder(CI);
     SmallVector <Value*, 4> Args(To->arg_size());

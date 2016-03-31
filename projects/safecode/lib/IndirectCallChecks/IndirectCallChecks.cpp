@@ -578,7 +578,7 @@ namespace {
 
       //go through all uses of this function
       for(iter = f.use_begin(), end = f.use_end(); iter != end; ++iter) {
-        User *user = *iter;
+        User *user = iter->getUser();
 
         //dont replace direct calls to this func with indirect calls
         unsigned low = isa<CallInst>(user) || isa<InvokeInst>(user);

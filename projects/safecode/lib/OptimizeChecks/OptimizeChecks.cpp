@@ -80,23 +80,23 @@ OptimizeChecks::onlyUsedInCompares (Value * Val) {
     //
     for (Value::use_iterator U = V->use_begin(); U != V->use_end(); ++U) {
       // Compares are okay
-      if (isa<CmpInst>(*U)) continue;
+      if (isa<CmpInst>(U->getUser())) continue;
 
       // Casts, Phi nodes, and GEPs require that we check the result, too.
-      if (isa<CastInst>(*U) ||
-          isa<PHINode>(*U)  ||
-          isa<BinaryOperator>(*U)  ||
-          isa<SelectInst>(*U)  ||
-          isa<SwitchInst>(*U)  ||
-          isa<GetElementPtrInst>(*U)) {
-        Worklist.push_back(*U);
+      if (isa<CastInst>(U->getUser()) ||
+          isa<PHINode>(U->getUser())  ||
+          isa<BinaryOperator>(U->getUser())  ||
+          isa<SelectInst>(U->getUser())  ||
+          isa<SwitchInst>(U->getUser())  ||
+          isa<GetElementPtrInst>(U->getUser())) {
+        Worklist.push_back(U->getUser());
         continue;
       }
 
-      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(*U)) {
+      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(U->getUser())) {
         // Casts and compares are okay
         if (CE->isCast() || CE->isCompare()) {
-          Worklist.push_back(*U);
+          Worklist.push_back(U->getUser());
           continue;
         }
 
@@ -104,7 +104,7 @@ OptimizeChecks::onlyUsedInCompares (Value * Val) {
         switch (CE->getOpcode()) {
           case Instruction::GetElementPtr:
           case Instruction::Select:
-            Worklist.push_back(*U);
+            Worklist.push_back(U->getUser());
             continue;
             break;
           default:
@@ -113,7 +113,7 @@ OptimizeChecks::onlyUsedInCompares (Value * Val) {
       }
 
       // Calls to run-time functions are okay; others are not.
-      if (CallInst * CI = dyn_cast<CallInst>(*U)) {
+      if (CallInst * CI = dyn_cast<CallInst>(U->getUser())) {
         Value * CV = CI->getCalledValue()->stripPointerCasts();
         if (Function * F = dyn_cast<Function>(CV)) {
           if (isRuntimeCheck (F)) {
@@ -173,7 +173,7 @@ OptimizeChecks::processFunction (Module & M, const CheckInfo & Info) {
     // We are only concerned about call instructions; any other use is of
     // no interest to the organization.
     //
-    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
+    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
       //
       // If the call instruction has any uses, we cannot remove it.
       //

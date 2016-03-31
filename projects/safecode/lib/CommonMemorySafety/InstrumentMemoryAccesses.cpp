@@ -128,7 +128,7 @@ void InstrumentMemoryAccesses::instrument(Value *Pointer, Value *AccessSize,
   
   // Create ArrayRef to be passed to Builder->CreateCall.
   Value* tempArray[2];
-  tempArray[0] = Pointer;
+  tempArray[0] = VoidPointer;
   tempArray[1] = AccessSize;
   ArrayRef<Value*> args(tempArray, 2);
 

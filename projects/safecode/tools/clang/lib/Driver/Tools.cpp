@@ -4073,6 +4073,28 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back(Args.MakeArgString(Twine(StackProtectorLevel)));
   }
 
+  // Handle the memory safety options
+  if (Args.getLastArg(options::OPT_softbound)){
+    CmdArgs.push_back("-fsoftbound");
+  }
+
+  if (Args.getLastArg(options::OPT_memsafety)) {
+    CmdArgs.push_back("-fmemsafety");
+  }
+
+  if (Args.getLastArg(options::OPT_bbc)) {
+    CmdArgs.push_back("-bbc");
+  }
+
+  if (Args.getLastArg(options::OPT_terminate)) {
+    CmdArgs.push_back("-fmemsafety-terminate");
+  }
+
+  if (Arg *MemSafetyLogOpt = Args.getLastArg(options::OPT_msLogFile)) {
+    CmdArgs.push_back("-fmemsafety-logfile");
+    CmdArgs.push_back(MemSafetyLogOpt->getValue());
+  }
+
   // --param ssp-buffer-size=
   for (const Arg *A : Args.filtered(options::OPT__param)) {
     StringRef Str(A->getValue());
@@ -6522,6 +6544,31 @@ void darwin::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     }
   }
 
+  if (Args.hasArg(options::OPT_softbound)){
+    CmdArgs.push_back("-lsoftbound_rt");
+    //    CmdArgs.push_back("-lrt");
+    CmdArgs.push_back("-lm");
+    if (!Args.hasArg(options::OPT_nostdlib) &&
+        !Args.hasArg(options::OPT_nodefaultlibs)) {
+      getToolChain().AddCXXStdlibLibArgs(Args, CmdArgs);
+    }
+  }
+
+  if (Args.hasArg(options::OPT_memsafety)) {
+    if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bb_rt");
+    } else {
+      CmdArgs.push_back("-lsc_dbg_rt");
+      CmdArgs.push_back("-lpoolalloc_bitmap");
+    }
+    CmdArgs.push_back("-lgdtoa");
+
+    if (!Args.hasArg(options::OPT_nostdlib) &&
+        !Args.hasArg(options::OPT_nodefaultlibs)) {
+      getToolChain().AddCXXStdlibLibArgs(Args, CmdArgs);
+    }
+  }
+
   const char *Exec = Args.MakeArgString(getToolChain().GetLinkerPath());
   std::unique_ptr<Command> Cmd =
       llvm::make_unique<Command>(JA, *this, Exec, CmdArgs);
@@ -6872,6 +6919,24 @@ void openbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   Args.AddAllArgs(CmdArgs, options::OPT_r);
 
   AddLinkerInputs(getToolChain(), Inputs, Args, CmdArgs);
+
+  if (Args.hasArg(options::OPT_softbound)){
+    CmdArgs.push_back("-lsoftbound_rt");
+    CmdArgs.push_back("-lrt");
+    CmdArgs.push_back("-lm");
+    CmdArgs.push_back("-lstdc++");
+  }
+
+  if (Args.hasArg(options::OPT_memsafety)) {
+    if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bb_rt");
+    } else {
+      CmdArgs.push_back("-lsc_dbg_rt");
+      CmdArgs.push_back("-lpoolalloc_bitmap");
+    }
+    CmdArgs.push_back("-lgdtoa");
+    CmdArgs.push_back("-lstdc++");
+  }
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nodefaultlibs)) {
@@ -7302,6 +7367,24 @@ void freebsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     }
   }
 
+  if (Args.hasArg(options::OPT_softbound)){
+    CmdArgs.push_back("-lsoftbound_rt");
+    CmdArgs.push_back("-lstdc++");
+    CmdArgs.push_back("-lrt");
+    CmdArgs.push_back("-lm");
+  }
+
+  if (Args.hasArg(options::OPT_memsafety)) {
+    if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bb_rt");
+    } else {
+      CmdArgs.push_back("-lsc_dbg_rt");
+      CmdArgs.push_back("-lpoolalloc_bitmap");
+    }
+    CmdArgs.push_back("-lgdtoa");
+    CmdArgs.push_back("-lstdc++");
+  }
+
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nostartfiles)) {
     if (Args.hasArg(options::OPT_shared) || IsPIE)
@@ -7583,6 +7666,24 @@ void netbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
         CmdArgs.push_back("--no-as-needed");
       }
     }
+  }
+
+  if (Args.hasArg(options::OPT_softbound)){
+    CmdArgs.push_back("-lsoftbound_rt");
+    CmdArgs.push_back("-lstdc++");
+    CmdArgs.push_back("-lrt");
+    CmdArgs.push_back("-lm");
+  }
+
+  if (Args.hasArg(options::OPT_memsafety)) {
+    if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bb_rt");
+    } else {
+      CmdArgs.push_back("-lsc_dbg_rt");
+      CmdArgs.push_back("-lpoolalloc_bitmap");
+    }
+    CmdArgs.push_back("-lgdtoa");
+    CmdArgs.push_back("-lstdc++");
   }
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
@@ -8106,6 +8207,25 @@ void gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   bool NeedsSanitizerDeps = addSanitizerRuntimes(ToolChain, Args, CmdArgs);
   AddLinkerInputs(ToolChain, Inputs, Args, CmdArgs);
+
+  if (Args.hasArg(options::OPT_softbound)){
+    CmdArgs.push_back("-lsoftbound_rt");
+    CmdArgs.push_back("-lrt");
+    CmdArgs.push_back("-lm");
+    CmdArgs.push_back("-lstdc++");
+  }
+
+  if (Args.hasArg(options::OPT_memsafety)) {
+    if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bb_rt");
+    } else {
+      CmdArgs.push_back("-lsc_dbg_rt");
+      CmdArgs.push_back("-lpoolalloc_bitmap");
+    }
+    CmdArgs.push_back("-lgdtoa");
+    CmdArgs.push_back("-lstdc++");
+  }
+
   // The profile runtime also needs access to system libraries.
   addProfileRT(getToolChain(), Args, CmdArgs);
 
@@ -8419,6 +8539,23 @@ void minix::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   AddLinkerInputs(getToolChain(), Inputs, Args, CmdArgs);
 
+  if (Args.hasArg(options::OPT_softbound)){
+    CmdArgs.push_back("-lsoftbound_rt");
+    CmdArgs.push_back("-lrt");
+    CmdArgs.push_back("-lm");
+    CmdArgs.push_back("-lstdc++");
+  }
+  if (Args.hasArg(options::OPT_memsafety)) {
+    if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bb_rt");
+    } else {
+      CmdArgs.push_back("-lsc_dbg_rt");
+      CmdArgs.push_back("-lpoolalloc_bitmap");
+    }
+    CmdArgs.push_back("-lgdtoa");
+    CmdArgs.push_back("-lstdc++");
+  }
+
   addProfileRT(getToolChain(), Args, CmdArgs);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
@@ -8543,6 +8680,23 @@ void dragonfly::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   Args.AddAllArgs(CmdArgs, options::OPT_e);
 
   AddLinkerInputs(getToolChain(), Inputs, Args, CmdArgs);
+
+  if (Args.hasArg(options::OPT_softbound)){
+    CmdArgs.push_back("-lsoftbound_rt");
+    CmdArgs.push_back("-lrt");
+    CmdArgs.push_back("-lm");
+    CmdArgs.push_back("-lstdc++");
+  }
+  if (Args.hasArg(options::OPT_memsafety)) {
+    if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bb_rt");
+    } else {
+      CmdArgs.push_back("-lsc_dbg_rt");
+      CmdArgs.push_back("-lpoolalloc_bitmap");
+    }
+    CmdArgs.push_back("-lgdtoa");
+    CmdArgs.push_back("-lstdc++");
+  }
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nodefaultlibs)) {

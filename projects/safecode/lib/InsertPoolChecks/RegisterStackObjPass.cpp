@@ -307,29 +307,29 @@ RegisterStackObjPass::registerAllocaInst (AllocaInst *AI) {
     Value::use_iterator UI = V->use_begin();
     for (; UI != V->use_end(); ++UI) {
       // We cannot handle PHI nodes or Select instructions
-      if (isa<PHINode>(*UI) || isa<SelectInst>(*UI)) {
+      if (isa<PHINode>(UI->getUser()) || isa<SelectInst>(UI->getUser())) {
         MustRegisterAlloca = true;
         continue;
       }
 
       // The pointer escapes if it's stored to memory somewhere.
       StoreInst * SI;
-      if ((SI = dyn_cast<StoreInst>(*UI)) && (SI->getOperand(0) == V)) {
+      if ((SI = dyn_cast<StoreInst>(UI->getUser())) && (SI->getOperand(0) == V)) {
         MustRegisterAlloca = true;
         continue;
       }
 
       // GEP instructions are okay, but need to be added to the worklist
-      if (isa<GetElementPtrInst>(*UI)) {
-        AllocaWorkList.push_back (*UI);
+      if (isa<GetElementPtrInst>(UI->getUser())) {
+        AllocaWorkList.push_back (UI->getUser());
         continue;
       }
 
       // Cast instructions are okay as long as they cast to another pointer
       // type
-      if (CastInst * CI = dyn_cast<CastInst>(*UI)) {
+      if (CastInst * CI = dyn_cast<CastInst>(UI->getUser())) {
         if (isa<PointerType>(CI->getType())) {
-          AllocaWorkList.push_back (*UI);
+          AllocaWorkList.push_back (UI->getUser());
           continue;
         } else {
           MustRegisterAlloca = true;
@@ -338,7 +338,7 @@ RegisterStackObjPass::registerAllocaInst (AllocaInst *AI) {
       }
 
 #if 0
-      if (ConstantExpr *cExpr = dyn_cast<ConstantExpr>(*UI)) {
+      if (ConstantExpr *cExpr = dyn_cast<ConstantExpr>(UI->getUser())) {
         if (cExpr->getOpcode() == Instruction::Cast) {
           AllocaWorkList.push_back (*UI);
           continue;
@@ -350,7 +350,7 @@ RegisterStackObjPass::registerAllocaInst (AllocaInst *AI) {
 #endif
 
       CallInst * CI1;
-      if ((CI1 = dyn_cast<CallInst>(*UI))) {
+      if ((CI1 = dyn_cast<CallInst>(UI->getUser()))) {
         if (!(CI1->getCalledFunction())) {
           MustRegisterAlloca = true;
           continue;
