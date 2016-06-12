@@ -272,6 +272,8 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   // multiplication.
   //
   if (AI->isArrayAllocation()) {
+    if(!isa<ConstantInt>(AI->getOperand(0)))
+      return;
     unsigned num = cast<ConstantInt>(AI->getOperand(0))->getZExtValue();
     objectSize = objectSize * num;
   }
@@ -353,8 +355,8 @@ InsertBaggyBoundsChecks::adjustAllocasFor (Function * F) {
   //
   // Scan through all uses of the function and process any allocas used by it.
   //
-  for (Value::use_iterator FU = F->use_begin(); FU != F->use_end(); ++FU) {
-    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
+  for (Value::user_iterator FU = F->user_begin(); FU != F->user_end(); ++FU) {
+    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
       Value * Ptr = CI->getArgOperand(1)->stripPointerCasts();
       if (AllocaInst * AI = dyn_cast<AllocaInst>(Ptr)){
         adjustAlloca (AI);
@@ -375,10 +377,10 @@ void
 InsertBaggyBoundsChecks::adjustArgv (Function * F) {
   //assert (F && "FIXME: Should not assume that argvregister is used!");
   if (!F) return;
-  if (!F->use_empty()) {
+  if (!F->user_empty()) {
     assert (isa<PointerType>(F->getReturnType()));
     assert (F->getNumUses() == 1);
-    CallInst *CI = cast<CallInst>(*(F->use_begin()));
+    CallInst *CI = cast<CallInst>(*(F->user_begin()));
     Value *Argv = CI->getArgOperand(1);
     BasicBlock::iterator I = CI;
     I++;
@@ -387,11 +389,11 @@ InsertBaggyBoundsChecks::adjustArgv (Function * F) {
                                       "argv_temp",
                                       cast<Instruction>(I));
     std::vector<User *> Uses;
-    Value::use_iterator UI = Argv->use_begin();
-    for (; UI != Argv->use_end(); ++UI) {
-      if (Instruction * Use = dyn_cast<Instruction>(UI->getUser()))
+    Value::user_iterator UI = Argv->user_begin();
+    for (; UI != Argv->user_end(); ++UI) {
+      if (Instruction * Use = dyn_cast<Instruction>(*UI))
         if (CI != Use) {
-          Uses.push_back (UI->getUser());
+          Uses.push_back (*UI);
         }
     }
 
@@ -435,7 +437,7 @@ mustCloneFunction (Function * F) {
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end();
        I != E; ++I) {
     if (I->hasByValAttr()) {
-      if(I->use_empty()) {
+      if(I->user_empty()) {
         continue;
       }
       return 1;
@@ -534,7 +536,7 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
       // The use_empty attributes of all the new function parameters 
       // must be set, since the function at present should not 
       // contain any code.
-      assert((In->use_empty()) &&
+      assert((In->user_empty()) &&
              "new function parameter not use_empty?");
 
       // verify that the VMap maps the parameter of the old function to 
@@ -542,7 +544,7 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
       assert((VMap[Io] == In) && 
              "Unexpected mapping between params of old and new fcns.");
 
-      if (!Io->hasByValAttr() || Io->use_empty()) {
+      if (!Io->hasByValAttr() || Io->user_empty()) {
         // verify that arguments without byval are of same type and 
         // alignment. 
         assert((Io->getType() == In->getType()) &&
@@ -617,7 +619,7 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
 
     while((Io != Eo) && (In != En)) {
 
-      if (Io->hasByValAttr() && !Io->use_empty()) {
+      if (Io->hasByValAttr() && !Io->user_empty()) {
 
         // construct a basic block for the new function if we haven't 
         // done so already.
@@ -632,7 +634,7 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
         Idx[1] = ConstantInt::get(Type::getInt32Ty(NewFunc->getContext()), 0);
 
         GetElementPtrInst * gep_inst = 
-	  GetElementPtrInst::Create(Io->getType(), VMap[Io], Idx, 
+	  GetElementPtrInst::CreateInBounds(VMap[Io], Idx,
                                  (VMap[Io])->getName() + ".cooked", header_blk);
 
         VMap[Io] = gep_inst;
@@ -746,7 +748,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
     }
 
     // Deal with the argument that with byval attribute, but without use.
-    if(I->use_empty()) {
+    if(I->user_empty()) {
       TP.push_back(FTy->getParamType(i));
       continue;
     }
@@ -804,7 +806,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
       In->setName(Io->getName());
 
       // skip arguments without byval attribute or use.
-      if (!Io->hasByValAttr() || Io->use_empty()) continue;
+      if (!Io->hasByValAttr() || Io->user_empty()) continue;
 
       {
         AttrBuilder AB0;
@@ -871,10 +873,10 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
     Type* newType = *iter++;
     AllocaInst *AINew = new AllocaInst(newType, "", BB);
     LoadInst *LINew = new LoadInst(I, "", BB);
-    GetElementPtrInst *GEPNew = GetElementPtrInst::Create(newType, AINew,
-                                                          Idx,
-                                                          Twine(""),
-                                                          BB);
+    GetElementPtrInst *GEPNew = GetElementPtrInst::CreateInBounds(AINew,
+                                                                  Idx,
+                                                                  Twine(""),
+                                                                  BB);
     new StoreInst(LINew, GEPNew, BB);
     args.push_back(AINew);
   }
@@ -917,9 +919,9 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
   //Change uses so that the direct calls to the original function become direct
   // calls to the cloned function.
   //
-  for (Value::use_iterator FU = F->use_begin(), FE = F->use_end();
+  for (Value::user_iterator FU = F->user_begin(), FE = F->user_end();
        FU != FE; ++FU) {
-    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
+    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
       if (CI->getCalledFunction() == F) {
         Function *Caller = CI->getParent()->getParent();
         Instruction *InsertPoint;
@@ -940,7 +942,7 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
         //
         for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end();
              I != E; ++I, ++i) {
-          if (!I->hasByValAttr() || I->use_empty()) {
+          if (!I->hasByValAttr() || I->user_empty()) {
             args.push_back(I);
             continue;
           }
@@ -989,7 +991,7 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
 
         for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end();
              I != E; ++I, ++i) {
-          if (I->hasByValAttr() && !I->use_empty()) {
+          if (I->hasByValAttr() && !I->user_empty()) {
 
 #if 0
             // Remove the old alignment attribute

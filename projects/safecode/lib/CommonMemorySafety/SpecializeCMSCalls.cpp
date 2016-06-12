@@ -104,11 +104,19 @@ void SpecializeCMSCalls::specialize(Module &M, StringRef Before,
 
   // Make all calls of the old function use the new function instead.
   SmallVector <CallInst*, 64> ToRemove;
-  for (Value::use_iterator UI = From->use_begin(), E = From->use_end();
+  for (Value::user_iterator UI = From->user_begin(), E = From->user_end();
         UI != E;
         ++UI) {
-    // Only call instructions are supposed to exist.
-    CallInst *CI = cast<CallInst>(UI->getUser());
+    //
+    // CFIchecks pass generates a TargetList global variable which produces
+    // irrelevent users of __loadcheck and __storecheck.
+    //
+    // i8* bitcast (void (i8*, i64)* @__loadcheck to i8*)
+    // i8* bitcast (void (i8*, i64)* @__storecheck to i8*)
+    //
+    // Only call instructions are supposed to transform.
+    CallInst *CI;
+    if(!(CI = dyn_cast<CallInst>(*UI))) return;
 
     IRBuilder<> Builder(CI);
     SmallVector <Value*, 4> Args(To->arg_size());

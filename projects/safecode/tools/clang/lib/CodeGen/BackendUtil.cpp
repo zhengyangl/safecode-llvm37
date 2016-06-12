@@ -471,9 +471,10 @@ void EmitAssemblyHelper::CreatePasses() {
     MPM->add (createCommonMSCInfoPass());
     MPM->add (createSAFECodeMSCInfoPass());
 
-    // C standard library / format string function transforms
-    MPM->add (new StringTransform());
     if (!CodeGenOpts.BaggyBounds) {
+      // C standard library / format string function transforms
+      MPM->add (new StringTransform());
+
       MPM->add (new FormatStringTransform());
       MPM->add (new RegisterVarargCallSites());
       MPM->add (new LoggingFunctions());

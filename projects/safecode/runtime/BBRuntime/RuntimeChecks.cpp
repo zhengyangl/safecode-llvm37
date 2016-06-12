@@ -336,6 +336,40 @@ bb_boundscheck_debug (DebugPoolTy * Pool,
   return _barebone_boundscheck((uintptr_t)Source, (uintptr_t)Dest);
 }
 
+extern "C" {
+  void __loadcheck(unsigned char*, size_t);
+  void __storecheck(unsigned char*, size_t);
+  void __fastloadcheck (unsigned char *, size_t, unsigned char *, size_t);
+  void __faststorecheck(unsigned char *, size_t, unsigned char *, size_t);
+  unsigned char * __fastgepcheck(unsigned char*, unsigned char*, unsigned char*, size_t);
+}
+
+void
+__loadcheck(unsigned char* a, size_t b) {
+  return;
+}
+
+void
+__storecheck(unsigned char* a, size_t b) {
+  return;
+}
+
+void
+__fastloadcheck (unsigned char * p, size_t size, unsigned char * q, size_t r) {
+  return;
+}
+
+void
+__faststorecheck (unsigned char * a, size_t b, unsigned char * c, size_t d) {
+  return;
+}
+
+unsigned char *
+__fastgepcheck (unsigned char* a, unsigned char* b, unsigned char* c, size_t d){
+  return 0;
+}
+
+
 //
 // Function: boundscheckui_debug()
 //
@@ -367,6 +401,12 @@ boundscheckui_debug (DebugPoolTy * Pool,
                      const char * SourceFile,
                      unsigned int lineno) {
   return bb_boundscheckui_debug(Pool, Source, Dest, tag, SourceFile, lineno);
+}
+
+extern "C" void *
+boundscheckui (DebugPoolTy * Pool, void * Source, void * Dest)
+{
+  return boundscheckui_debug (Pool, Source, Dest, 0, NULL, 0);
 }
 
 
@@ -615,7 +655,7 @@ bb_poolcheck_free (DebugPoolTy *Pool, void * ptr) {
 // Description:
 //  The incomplete version of poolcheck_free().
 //
-void
+extern "C" void
 poolcheck_freeui (DebugPoolTy *Pool, void * ptr) {
   bb_poolcheck_freeui_debug(Pool, ptr, 0, NULL, 0);
 }
