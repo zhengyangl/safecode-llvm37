@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 #
 # This script is used to compile and test a single file with SAFECode.
