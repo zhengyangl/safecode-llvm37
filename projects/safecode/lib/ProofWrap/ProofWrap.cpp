@@ -28,9 +28,9 @@ bool ProofStrip::runOnModule(Module& M) {
   FunctionType* FT = FunctionType::get(Type::VoidTy, FTV, true);
   Function* F = M.getFunction("llvm.proof.ptr", FT);
   if (F) {
-    while (!F->use_empty()) {
-      User* U = *F->use_begin();
-      CallInst* CI = cast<CallInst>(U);
+    while (!F->user_empty()) {
+      User* U = *F->user_begin();
+      CallInst* CI = cast<CallInst>(*U);
       const Value* PV = CI->getOperand(1);
       for (unsigned x = 2; x < CI->getNumOperands(); ++x)
         setProof(CI->getOperand(x), PV);

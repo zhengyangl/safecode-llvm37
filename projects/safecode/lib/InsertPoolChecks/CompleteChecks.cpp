@@ -136,8 +136,8 @@ CompleteChecks::makeCStdLibCallsComplete (Function *F,
   assert(PoolArgs <= 8 && \
     "Only up to 8 arguments are supported by CStdLib completeness checks!");
 
-  Value::use_iterator U = F->use_begin();
-  Value::use_iterator E = F->use_end();
+  Value::user_iterator U = F->user_begin();
+  Value::user_iterator E = F->user_end();
 
   //
   // Hold the call instructions that need changing.
@@ -178,7 +178,7 @@ CompleteChecks::makeCStdLibCallsComplete (Function *F,
   //
   for (; U != E; ++U) {
     CallInst *CI;
-    if ((CI = dyn_cast<CallInst>(U->getUser())) &&
+    if ((CI = dyn_cast<CallInst>(*U)) &&
          CI->getCalledValue()->stripPointerCasts() == F) {
 
       uint8_t vector = 0x0;
@@ -284,10 +284,10 @@ CompleteChecks::makeComplete (Module & M, const struct CheckInfo & CheckInfo) {
   // complete pointers.
   //
   std::vector <CallInst *> toChange;
-  Value::use_iterator UI = Incomplete->use_begin();
-  Value::use_iterator  E = Incomplete->use_end();
+  Value::user_iterator UI = Incomplete->user_begin();
+  Value::user_iterator  E = Incomplete->user_end();
   for (; UI != E; ++UI) {
-    if (CallInst * CI = dyn_cast<CallInst>(UI->getUser())) {
+    if (CallInst * CI = dyn_cast<CallInst>(*UI)) {
       if (CI->getCalledValue()->stripPointerCasts() == Incomplete) {
         //
         // Get the pointer that is checked by this run-time check.
@@ -354,10 +354,10 @@ CompleteChecks::makeFSParameterCallsComplete(Module &M)
   // Iterate over all uses of sc.fsparameter and discover which have a complete
   // pointer argument.
   //
-  for (Function::use_iterator i = sc_fsparameter->use_begin();
-       i != sc_fsparameter->use_end(); ++i) {
+  for (Function::user_iterator i = sc_fsparameter->user_begin();
+       i != sc_fsparameter->user_end(); ++i) {
     CallInst *CI;
-    CI = dyn_cast<CallInst>(i->getUser());
+    CI = dyn_cast<CallInst>(*i);
     if (CI == 0 || CI->getCalledFunction() != sc_fsparameter)
       continue;
 
@@ -559,10 +559,10 @@ CompleteChecks::fixupCFIChecks (Module & M, std::string name) {
   // Scan through all uses of the funccheck() function.
   //
   PointerType * VoidPtrType = getVoidPtrType(M.getContext());
-  Value::use_iterator UI = FuncCheck->use_begin();
-  Value::use_iterator  E = FuncCheck->use_end();
+  Value::user_iterator UI = FuncCheck->user_begin();
+  Value::user_iterator  E = FuncCheck->user_end();
   for (; UI != E; ++UI) {
-    if (CallInst * CI = dyn_cast<CallInst>(UI->getUser())) {
+    if (CallInst * CI = dyn_cast<CallInst>(*UI)) {
       if (CI->getCalledValue()->stripPointerCasts() == FuncCheck) {
         //
         // Get the call instruction following this call instruction.

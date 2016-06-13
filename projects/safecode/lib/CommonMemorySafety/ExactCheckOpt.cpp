@@ -428,10 +428,10 @@ void ExactCheckOpt::optimizeAll(Module &M, CheckInfoType *Info,
 
   SmallVector <CallInst*, 64> Converted;
   // Convert the checks that can be safely converted.
-  for (Value::use_iterator UI = CheckFn->use_begin(), E = CheckFn->use_end();
+  for (Value::user_iterator UI = CheckFn->user_begin(), E = CheckFn->user_end();
         UI != E;
         ++UI) {
-    if (CallInst *CI = dyn_cast<CallInst>(UI->getUser())) {
+    if (CallInst *CI = dyn_cast<CallInst>(*UI)) {
       if (optimizeCheck(CI, Info))
         Converted.push_back(CI);
     }

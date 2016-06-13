@@ -53,8 +53,8 @@ OptimizeSafeLoadStore::runOnModule(Module & M) {
   //
   std::vector <CallInst *> toRemoveTypeSafe;
   std::vector <CallInst *> toRemoveObvious;
-  Value::use_iterator UI = LSCheck->use_begin();
-  Value::use_iterator  E = LSCheck->use_end();
+  Value::user_iterator UI = LSCheck->user_begin();
+  Value::user_iterator  E = LSCheck->user_end();
   for (; UI != E; ++UI) {
     if (CallInst * CI = dyn_cast<CallInst>(*UI)) {
       if (CI->getCalledValue()->stripPointerCasts() == LSCheck) {

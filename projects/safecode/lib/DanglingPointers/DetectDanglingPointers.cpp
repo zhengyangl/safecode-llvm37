@@ -107,11 +107,11 @@ DetectDanglingPointers::processFrees (Module & M,
       //
       // Iterate over all uses of the free function and add instrumentation.
       //
-      Value::use_iterator  it, end;
-      for (it = freeFunc->use_begin(), end = freeFunc->use_end();
+      Value::user_iterator  it, end;
+      for (it = freeFunc->user_begin(), end = freeFunc->user_end();
            it != end;
            ++it) {
-        if (CallInst * CI = dyn_cast<CallInst>(it->getUser())) {
+        if (CallInst * CI = dyn_cast<CallInst>(*it)) {
           //
           // Backup one instruction since the preceding instruction should be
           // a call to poolunregister().
@@ -202,11 +202,11 @@ DetectDanglingPointers::runOnModule (Module & M) {
       //
       // Iterate over all uses of the allocation function.
       //
-      Value::use_iterator  it, end;
-      for (it = allocFunc->use_begin(), end = allocFunc->use_end();
+      Value::user_iterator  it, end;
+      for (it = allocFunc->user_begin(), end = allocFunc->user_end();
            it != end;
            ++it) {
-        if (CallInst * CI = dyn_cast<CallInst>(it->getUser())) {
+        if (CallInst * CI = dyn_cast<CallInst>(*it)) {
           if (CI->getCalledFunction() == allocFunc) {
             //
             // FIXME: This should eventually use an integer that is identical

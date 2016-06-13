@@ -2541,8 +2541,8 @@ SoftBoundCETSPass::addLoadStoreChecks(Instruction* load_store,
     
     // FIXME: Add more comments here Iterate over the uses
 
-    for(Value::use_iterator ui = pointer_operand->use_begin(), 
-          ue = pointer_operand->use_end(); 
+    for(Value::user_iterator ui = pointer_operand->user_begin(), 
+          ue = pointer_operand->user_end(); 
         ui != ue; ++ui) {
         
       Instruction* temp_inst = dyn_cast<Instruction>(*ui);       
@@ -2976,8 +2976,8 @@ SoftBoundCETSPass::addTemporalChecks(Instruction* load_store,
       }
       
       /* iterate over the uses */            
-      for(Value::use_iterator ui = pointer_operand->use_begin(), 
-            ue = pointer_operand->use_end(); ui != ue; ++ui) {
+      for(Value::user_iterator ui = pointer_operand->user_begin(), 
+            ue = pointer_operand->user_end(); ui != ue; ++ui) {
         
         Instruction* temp_inst = cast<Instruction>(*ui);       
         if(!temp_inst)

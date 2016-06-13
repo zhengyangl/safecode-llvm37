@@ -272,8 +272,6 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   // multiplication.
   //
   if (AI->isArrayAllocation()) {
-    if(!isa<ConstantInt>(AI->getOperand(0)))
-      return;
     unsigned num = cast<ConstantInt>(AI->getOperand(0))->getZExtValue();
     objectSize = objectSize * num;
   }

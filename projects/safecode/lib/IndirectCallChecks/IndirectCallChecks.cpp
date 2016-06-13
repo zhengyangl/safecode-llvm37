@@ -572,13 +572,13 @@ namespace {
 
       cerr << "Function: " << f.getName().str() << "\n";
 
-      Function::use_iterator iter, end;
+      Function::user_iterator iter, end;
 
       Function *indirect = entry.getIndirectFunction();
 
       //go through all uses of this function
-      for(iter = f.use_begin(), end = f.use_end(); iter != end; ++iter) {
-        User *user = iter->getUser();
+      for(iter = f.user_begin(), end = f.user_end(); iter != end; ++iter) {
+        User *user = *iter;
 
         //dont replace direct calls to this func with indirect calls
         unsigned low = isa<CallInst>(user) || isa<InvokeInst>(user);

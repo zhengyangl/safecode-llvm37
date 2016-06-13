@@ -108,12 +108,12 @@ RewriteOOB::processFunction (Module & M, const CheckInfo & Check) {
   // operand to be the result of the function.
   //
   bool modified = false;
-  for (Value::use_iterator FU = F->use_begin(); FU != F->use_end(); ++FU) {
+  for (Value::user_iterator FU = F->user_begin(); FU != F->user_end(); ++FU) {
     //
     // We are only concerned about call instructions; any other use is of
     // no interest to the organization.
     //
-    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
+    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
       //
       // Get the operand that needs to be replaced as well as the operand
       // with all of the casts peeled away.  Increment the operand index by
@@ -172,19 +172,19 @@ RewriteOOB::processFunction (Module & M, const CheckInfo & Check) {
       // iterator invalidation errors.
       //
       std::vector<User *> Uses;
-      Value::use_iterator UI = PeeledOperand->use_begin();
-      for (; UI != PeeledOperand->use_end(); ++UI) {
-        if (Instruction * Use = dyn_cast<Instruction>(UI->getUser())) {
+      Value::user_iterator UI = PeeledOperand->user_begin();
+      for (; UI != PeeledOperand->user_end(); ++UI) {
+        if (Instruction * Use = dyn_cast<Instruction>(*UI)) {
           if (Use->getParent()->getParent() == CurrentFunction) {
             if (isa<PHINode>(Use)) {
               if (inSameBlock) {
-                Uses.push_back (UI->getUser());
+                Uses.push_back (*UI);
                 ++Changes;
               }
               continue;
             }
             if ((CI != Use) && (domTree->dominates (CI, Use))) {
-              Uses.push_back (UI->getUser());
+              Uses.push_back (*UI);
               ++Changes;
             }
           }

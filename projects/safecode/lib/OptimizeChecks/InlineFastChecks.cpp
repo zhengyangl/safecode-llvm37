@@ -90,12 +90,12 @@ llvm::InlineFastChecks::inlineCheck (Function * F) {
   //
   bool modified = false;
   std::vector<CallInst *> CallsToInline;
-  for (Value::use_iterator FU = F->use_begin(); FU != F->use_end(); ++FU) {
+  for (Value::user_iterator FU = F->user_begin(); FU != F->user_end(); ++FU) {
     //
     // We are only concerned about call instructions; any other use is of
     // no interest to the organization.
     //
-    if (CallInst * CI = dyn_cast<CallInst>(FU->getUser())) {
+    if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
       //
       // If the call instruction has no uses, we can remove it.
       //

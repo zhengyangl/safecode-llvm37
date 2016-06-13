@@ -189,10 +189,10 @@ PoolRegisterElimination::removeUnusedRegistrations (const char * name) {
   //
   // Look for and record all registrations that can be deleted.
   //
-  for (Value::use_iterator UI=F->use_begin(), UE=F->use_end();
+  for (Value::user_iterator UI=F->user_begin(), UE=F->user_end();
        UI != UE;
        ++UI) {
-    CallInst * CI = cast<CallInst>(UI->getUser());
+    CallInst * CI = cast<CallInst>(*UI);
     if (isSafeToRemove (intrinsic->getValuePointer(CI))) {
       toBeRemoved.push_back(CI);
     }
@@ -225,13 +225,13 @@ PoolRegisterElimination::removeTypeSafeRegistrations (const char * name) {
   //
   // Look for and record all registrations that can be deleted.
   //
-  for (Value::use_iterator UI=F->use_begin(), UE=F->use_end();
+  for (Value::user_iterator UI=F->user_begin(), UE=F->user_end();
        UI != UE;
        ++UI) {
     //
     // Get the pointer to the registered object.
     //
-    CallInst * CI = cast<CallInst>(UI->getUser());
+    CallInst * CI = cast<CallInst>(*UI);
     Value * Ptr = intrinsic->getValuePointer(CI);
     // Lookup the DSNode for the value in the function's DSGraph.
     //
@@ -280,13 +280,13 @@ PoolRegisterElimination::removeSingletonRegistrations (const char * name) {
   //
   // Look for and record all registrations that can be deleted.
   //
-  for (Value::use_iterator UI=F->use_begin(), UE=F->use_end();
+  for (Value::user_iterator UI=F->user_begin(), UE=F->user_end();
        UI != UE;
        ++UI) {
     //
     // Get the pointer to the registered object.
     //
-    CallInst * CI = cast<CallInst>(UI->getUser());
+    CallInst * CI = cast<CallInst>(*UI);
     Value * Ptr = intrinsic->getValuePointer(CI);
 
     //

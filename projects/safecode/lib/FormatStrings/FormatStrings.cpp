@@ -252,7 +252,7 @@ FormatStringTransform::transform(Module &M,
   //
   // Locate all the instructions which call the named function.
   //
-  for (Function::use_iterator i = f->use_begin(); i != f->use_end(); ++i)
+  for (Function::user_iterator i = f->user_begin(); i != f->user_end(); ++i)
   {
     CallSite C(*i);
     if (!C || C.getCalledFunction() != f)

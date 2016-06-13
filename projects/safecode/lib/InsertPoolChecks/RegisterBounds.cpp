@@ -206,9 +206,9 @@ void
 RegisterCustomizedAllocation::proceedAllocator(Module * M, AllocatorInfo * info) {
   Function * allocFunc = M->getFunction(info->getAllocCallName());
   if (allocFunc) {
-    for (Value::use_iterator it = allocFunc->use_begin(), 
-           end = allocFunc->use_end(); it != end; ++it) {
-      if (CallInst * CI = dyn_cast<CallInst>(it->getUser())) {
+    for (Value::user_iterator it = allocFunc->user_begin(), 
+           end = allocFunc->user_end(); it != end; ++it) {
+      if (CallInst * CI = dyn_cast<CallInst>(*it)) {
         if (CI->getCalledValue() == allocFunc) {
           registerAllocationSite(CI, info);
           ++RegisteredHeapObjs;
@@ -220,11 +220,11 @@ RegisterCustomizedAllocation::proceedAllocator(Module * M, AllocatorInfo * info)
       // a cast that is used by a call instruction.  Get the enclosing call
       // instruction if so.
       //
-      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(it->getUser())) {
+      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(*it)) {
         if (CE->isCast()) {
-          for (Value::use_iterator iit = CE->use_begin(),
-                 end = CE->use_end(); iit != end; ++iit) {
-            if (CallInst * CI = dyn_cast<CallInst>(iit->getUser())) {
+          for (Value::user_iterator iit = CE->user_begin(),
+                 end = CE->user_end(); iit != end; ++iit) {
+            if (CallInst * CI = dyn_cast<CallInst>(*iit)) {
               if (CI->getCalledValue() == CE) {
                 registerAllocationSite(CI, info);
                 ++RegisteredHeapObjs;
@@ -242,9 +242,9 @@ RegisterCustomizedAllocation::proceedAllocator(Module * M, AllocatorInfo * info)
   //
   Function * freeFunc = M->getFunction(info->getFreeCallName());
   if (freeFunc) {
-    for (Value::use_iterator it = freeFunc->use_begin(),
-           end = freeFunc->use_end(); it != end; ++it) {
-      if (CallInst * CI = dyn_cast<CallInst>(it->getUser())) {
+    for (Value::user_iterator it = freeFunc->user_begin(),
+           end = freeFunc->user_end(); it != end; ++it) {
+      if (CallInst * CI = dyn_cast<CallInst>(*it)) {
         if (CI->getCalledValue() == freeFunc) {
           registerFreeSite(CI, info);
         }
@@ -255,11 +255,11 @@ RegisterCustomizedAllocation::proceedAllocator(Module * M, AllocatorInfo * info)
       // a cast that is used by a call instruction.  Get the enclosing call
       // instruction if so.
       //
-      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(it->getUser())) {
+      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(*it)) {
         if (CE->isCast()) {
-          for (Value::use_iterator iit = CE->use_begin(),
-                 end = CE->use_end(); iit != end; ++iit) {
-            if (CallInst * CI = dyn_cast<CallInst>(iit->getUser())) {
+          for (Value::user_iterator iit = CE->user_begin(),
+                 end = CE->user_end(); iit != end; ++iit) {
+            if (CallInst * CI = dyn_cast<CallInst>(*iit)) {
               if (CI->getCalledValue() == CE) {
                 registerFreeSite(CI, info);
               }
@@ -275,9 +275,9 @@ void
 RegisterCustomizedAllocation::proceedReallocator(Module * M, ReAllocatorInfo * info) {
   Function * allocFunc = M->getFunction(info->getAllocCallName());
   if (allocFunc) {
-    for (Value::use_iterator it = allocFunc->use_begin(), 
-           end = allocFunc->use_end(); it != end; ++it) {
-      if (CallInst * CI = dyn_cast<CallInst>(it->getUser())) {
+    for (Value::user_iterator it = allocFunc->user_begin(), 
+           end = allocFunc->user_end(); it != end; ++it) {
+      if (CallInst * CI = dyn_cast<CallInst>(*it)) {
         if (CI->getCalledValue()->stripPointerCasts() == allocFunc) {
           registerReallocationSite(CI, info);
           ++RegisteredHeapObjs;
@@ -289,11 +289,11 @@ RegisterCustomizedAllocation::proceedReallocator(Module * M, ReAllocatorInfo * i
       // a cast that is used by a call instruction.  Get the enclosing call
       // instruction if so.
       //
-      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(it->getUser())) {
+      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(*it)) {
         if (CE->isCast()) {
-          for (Value::use_iterator iit = CE->use_begin(),
-                 end = CE->use_end(); iit != end; ++iit) {
-            if (CallInst * CI = dyn_cast<CallInst>(iit->getUser())) {
+          for (Value::user_iterator iit = CE->user_begin(),
+                 end = CE->user_end(); iit != end; ++iit) {
+            if (CallInst * CI = dyn_cast<CallInst>(*iit)) {
               if (CI->getCalledValue() == CE) {
                 registerReallocationSite(CI, info);
                 ++RegisteredHeapObjs;
@@ -308,9 +308,9 @@ RegisterCustomizedAllocation::proceedReallocator(Module * M, ReAllocatorInfo * i
   
   Function * freeFunc = M->getFunction(info->getFreeCallName());
   if (freeFunc) {
-    for (Value::use_iterator it = freeFunc->use_begin(),
-           end = freeFunc->use_end(); it != end; ++it) {
-      if (CallInst * CI = dyn_cast<CallInst>(it->getUser())) {
+    for (Value::user_iterator it = freeFunc->user_begin(),
+           end = freeFunc->user_end(); it != end; ++it) {
+      if (CallInst * CI = dyn_cast<CallInst>(*it)) {
         if (CI->getCalledValue()->stripPointerCasts() == freeFunc) {
           registerFreeSite(CI, info);
         }
@@ -321,11 +321,11 @@ RegisterCustomizedAllocation::proceedReallocator(Module * M, ReAllocatorInfo * i
       // a cast that is used by a call instruction.  Get the enclosing call
       // instruction if so.
       //
-      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(it->getUser())) {
+      if (ConstantExpr * CE = dyn_cast<ConstantExpr>(*it)) {
         if (CE->isCast()) {
-          for (Value::use_iterator iit = CE->use_begin(),
-                 end = CE->use_end(); iit != end; ++iit) {
-            if (CallInst * CI = dyn_cast<CallInst>(iit->getUser())) {
+          for (Value::user_iterator iit = CE->user_begin(),
+                 end = CE->user_end(); iit != end; ++iit) {
+            if (CallInst * CI = dyn_cast<CallInst>(*iit)) {
               if (CI->getCalledValue() == CE) {
                 registerFreeSite(CI, info);
               }

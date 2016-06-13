@@ -66,8 +66,8 @@ namespace llvm {
 	/// Taint analysis for Load Instructions
 	LoadInst * inst = dyn_cast<LoadInst>(I);
 	unsafeInstruction.insert(inst);
-	for (Value::use_iterator I = inst->use_begin(), E = inst->use_end(); I != E; ++ I) {
-	  if (Instruction * in = dyn_cast<Instruction>(I)) {
+	for (Value::user_iterator I = inst->user_begin(), E = inst->user_end(); I != E; ++ I) {
+	  if (Instruction * in = dyn_cast<Instruction>(*I)) {
 	    if (in->getParent() != BB) {
 	      break;
 	    }

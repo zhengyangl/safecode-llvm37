@@ -66,9 +66,9 @@ Terminate::runOnModule (Module & M) {
   //
   bool modified = false;
   Type * Int32Type = IntegerType::getInt32Ty(M.getContext());
-  Function::use_iterator i, e;
-  for (i = F->use_begin(), e = F->use_end(); i != e; ++i) {
-    if (CallInst * CI = dyn_cast<CallInst>(i->getUser())) {
+  Function::user_iterator i, e;
+  for (i = F->user_begin(), e = F->user_end(); i != e; ++i) {
+    if (CallInst * CI = dyn_cast<CallInst>(*i)) {
       CallSite CS(CI);
       CS.setArgument(2, ConstantInt::get(Int32Type, 1));
       modified = true;
