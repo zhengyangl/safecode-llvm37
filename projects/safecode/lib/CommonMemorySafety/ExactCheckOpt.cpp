@@ -306,7 +306,7 @@ bool ExactCheckOpt::optimizeCheck(CallInst *CI, CheckInfoType *Info) {
   // Add non-instruction non-constant allocation object pointers to the front
   // of the function's entry block.
   BasicBlock &EntryBlock = CI->getParent()->getParent()->getEntryBlock();
-  Instruction *FirstInsertionPoint = ++BasicBlock::iterator(EntryBlock.begin());
+  Instruction *FirstInsertionPoint = BasicBlock::iterator(EntryBlock.begin());
 
   for (SmallSet<Value*, 16>::const_iterator It = Objects.begin(),
        E = Objects.end();
