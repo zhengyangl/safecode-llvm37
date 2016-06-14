@@ -49,6 +49,7 @@ struct CFIChecks : public ModulePass, InstVisitor<CFIChecks> {
   protected:
     // Pointer to load/store run-time check function
     Function * FunctionCheckUI;
+    static const char * const prohibitedFunctions[];
 
     // Create a global variable table for the targets of the call instruction
     GlobalVariable * createTargetTable (CallInst & CI, bool & isComplete);

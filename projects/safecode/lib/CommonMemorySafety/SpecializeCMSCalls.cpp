@@ -107,16 +107,8 @@ void SpecializeCMSCalls::specialize(Module &M, StringRef Before,
   for (Value::user_iterator UI = From->user_begin(), E = From->user_end();
         UI != E;
         ++UI) {
-    //
-    // CFIchecks pass generates a TargetList global variable which produces
-    // irrelevent users of __loadcheck and __storecheck.
-    //
-    // i8* bitcast (void (i8*, i64)* @__loadcheck to i8*)
-    // i8* bitcast (void (i8*, i64)* @__storecheck to i8*)
-    //
-    // Only call instructions are supposed to transform.
-    CallInst *CI;
-    if(!(CI = dyn_cast<CallInst>(*UI))) return;
+    // Only call instructions are supposed to exist.
+    CallInst *CI = cast<CallInst>(*UI);
 
     IRBuilder<> Builder(CI);
     SmallVector <Value*, 4> Args(To->arg_size());
