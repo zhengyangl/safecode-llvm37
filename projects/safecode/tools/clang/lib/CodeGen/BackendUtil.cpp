@@ -481,7 +481,13 @@ void EmitAssemblyHelper::CreatePasses() {
     }
 
     MPM->add (new InitAllocas());
-    MPM->add (new RegisterGlobalVariables());
+
+    // Do not register external global variable in bbac
+    if(CodeGenOpts.BaggyBounds)
+      MPM->add (new RegisterGlobalVariables(false));
+    else
+      MPM->add (new RegisterGlobalVariables(true));
+
     MPM->add (new RegisterMainArgs());
     MPM->add (new InsertFreeChecks());
     MPM->add (new RegisterCustomizedAllocation());

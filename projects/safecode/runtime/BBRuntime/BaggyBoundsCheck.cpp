@@ -250,9 +250,10 @@ __internal_register(DebugPoolTy *Pool,
   uintptr_t Source1 = Source & ~((1<<size)-1);
   if(Source1 != Source) {
     // TODO: BIG COMMENT
-    // fprintf(stderr, "Memory object %p, %p, %u not aligned\n", (void*)Source,
-    //        (void*)Source1, NumBytes);
-    // assert(0 && "Memory objects not aligned");
+    fprintf(stderr, "Memory object %p, %p, %u not aligned\n", (void*)Source,
+            (void*)Source1, NumBytes);
+    fprintf(stderr, "In source %s\n", SourceFilep);
+    assert(0 && "Memory objects not aligned");
   }
   Source = Source & ~((1<<size)-1);
   unsigned long index = Source >> SLOT_SIZE;

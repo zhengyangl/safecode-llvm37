@@ -146,6 +146,13 @@ RegisterGlobalVariables::runOnModule(Module & M) {
     // Skip globals that may not be emitted into the final executable.
     //
     if (GV->hasAvailableExternallyLinkage()) continue;
+
+    //
+    // Skip all external globals if registerExternal is false. registerExternal
+    // is set to false in bbac.
+    //
+    if ((!registerExternal) && GV->hasExternalLinkage()) continue;
+
     registerGV(GV, InsertPt);    
   }
 

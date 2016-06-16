@@ -58,9 +58,12 @@ protected:
 /// Register the bound information of global variables.
 /// All registeration are placed at sc.register_globals
 class RegisterGlobalVariables : public RegisterVariables {
+private:
+  const bool registerExternal;
 public:
   static char ID;
-  RegisterGlobalVariables() : RegisterVariables(ID) {}
+  RegisterGlobalVariables(bool isRegisterExternal = true) : RegisterVariables(ID),
+                                                            registerExternal(isRegisterExternal) {}
   const char * getPassName() const 
   { return "Register Global Variables into Pools"; }
 
