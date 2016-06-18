@@ -35,22 +35,47 @@ namespace {
 
 // All runtime checks functions should not appear in TargetList.
 const char* const CFIChecks::prohibitedFunctions[] = {
-  "__loadcheck", "__storecheck",
-  "pool_init_runtime", "pool_init_logfile"
+  "__loadcheck",
+  "__storecheck",
+  "pool_init_runtime",
+  "pool_init_logfile",
   "poolargvregister",
-  "pool_register", "pool_register_debug",
-  "pool_register_stack", "pool_register_stack_debug",
-  "pool_register_global", "pool_register_global_debug",
-  "pool_reregister", "pool_reregister_debug",
-  "pool_unregister", "pool_unregister_debug",
-  "poolrealloc",  "poolcheck", "poolcheckui", "poolcheck_debug", "poolcheckui_debug",
-  "poolcheckalign", "poolcheckalign_debug",
-  "boundscheck", "boundscheckui", "boundscheckui_debug", "boundscheck_debug",
-  "exactcheck2", "exactcheck2_debug", "fastlscheck", "fastlscheck_debug",
+  "pool_register",
+  "pool_register_debug",
+  "pool_register_stack",
+  "pool_register_stack_debug",
+  "pool_register_global",
+  "pool_register_global_debug",
+  "pool_reregister",
+  "pool_reregister_debug",
+  "pool_unregister",
+  "pool_unregister_debug",
+  "poolrealloc",
+  "poolcheck",
+  "poolcheckui",
+  "poolcheck_debug",
+  "poolcheckui_debug",
+  "poolcheckalign",
+  "poolcheckalign_debug",
+  "boundscheck",
+  "boundscheckui",
+  "boundscheckui_debug",
+  "boundscheck_debug",
+  "exactcheck2",
+  "exactcheck2_debug",
+  "fastlscheck",
+  "fastlscheck_debug",
   "pchk_getActualValue",
-  "funccheck", "funccheckui", "funccheck_debug", "funccheckui_debug",
-  "pool_shadow", "pool_unshadow",
-  "poolcheck_free", "poolcheck_freeui", "poolcheck_free_debug", "poolcheck_freeui_debug",
+  "funccheck",
+  "funccheckui",
+  "funccheck_debug",
+  "funccheckui_debug",
+  "pool_shadow",
+  "pool_unshadow",
+  "poolcheck_free",
+  "poolcheck_freeui",
+  "poolcheck_free_debug",
+  "poolcheck_freeui_debug",
 };
 
 //
@@ -132,19 +157,26 @@ CFIChecks::createTargetTable (CallInst & CI, bool & isComplete) {
             continue;
           }
 
-          //
-          // Do not include functions in the prohibitedFunctions array, or functions
-          // with __sc_bb_ or __sc_dbg_ prefix.
-          //
           if (Target->hasName()) {
             StringRef Name = Target->getName();
-            if(Name.find("__sc_bb_") || Name.find("__sc_dbg_")) continue;
+            //
+            // Functions with prefix __sc_bb_ or __sc_dbg_ are safecode runtime
+            // check functions. These functions are considered safe to invoke.
+            // However, subsequent SAFECode passes may be distrupted if these
+            // functions are added in the TargetsList. Therefore, these functions
+            // will not be added to the TargetsList.
+            //
+            if(Name.startswith("__sc_bb_") || Name.startswith("__sc_dbg_")) continue;
 
+            //
+            // Functions in prohibitedFunctions list are also safecode runtime
+            // check functions. Do not add to TargetsList.
+            //
             bool isMatched = false;
-            for (size_t i = 0; i < sizeof(prohibitedFunctions)/sizeof(prohibitedFunctions[0]); i++)
-            {
-              if (Name == prohibitedFunctions[i])
-              {
+            for (size_t i = 0;
+                 i < sizeof(prohibitedFunctions)/sizeof(prohibitedFunctions[0]);
+                 i++) {
+              if (Name == prohibitedFunctions[i]) {
                 isMatched = true;
                 break;
               }

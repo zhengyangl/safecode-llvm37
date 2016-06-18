@@ -24,6 +24,9 @@
 
 using namespace llvm;
 
+template class RegisterGlobalVariables<true>;
+template class RegisterGlobalVariables<false>;
+
 namespace {
   // Statistics
   STATISTIC (RegisteredGVs,      "Number of registered global variables");
@@ -33,23 +36,26 @@ namespace {
 
 namespace llvm {
 
-char RegisterGlobalVariables::ID = 0;
 char RegisterMainArgs::ID = 0;
 char RegisterFunctionByvalArguments::ID=0;
 char RegisterCustomizedAllocation::ID = 0;
+template <bool T> char RegisterGlobalVariables<T>::ID = 0;
 
 
-static llvm::RegisterPass<RegisterGlobalVariables>
+static llvm::RegisterPass<RegisterGlobalVariables<true> >
 X1 ("reg-globals", "Register globals into pools", true);
 
+static llvm::RegisterPass<RegisterGlobalVariables<false> >
+X2 ("reg-globals-no-external", "Register globals into pools without externals", true);
+
 static llvm::RegisterPass<RegisterMainArgs>
-X2 ("reg-argv", "Register argv[] into pools", true);
+X3 ("reg-argv", "Register argv[] into pools", true);
 
 static llvm::RegisterPass<RegisterCustomizedAllocation>
-X3 ("reg-custom-alloc", "Register customized allocators", true);
+X4 ("reg-custom-alloc", "Register customized allocators", true);
 
 static llvm::RegisterPass<RegisterFunctionByvalArguments>
-X4 ("reg-byval-args", "Register byval arguments for functions", true);
+X5 ("reg-byval-args", "Register byval arguments for functions", true);
 
 //
 // Method: registerGV()
@@ -58,9 +64,10 @@ X4 ("reg-byval-args", "Register byval arguments for functions", true);
 //  This method adds code into a program to register a global variable into its
 //  pool.
 //
+template <bool T>
 void
-RegisterGlobalVariables::registerGV (GlobalVariable * GV,
-                                     Instruction * InsertBefore) {
+RegisterGlobalVariables<T>::registerGV(GlobalVariable * GV,
+                                       Instruction * InsertBefore) {
   //
   // Do not register the global variable if it has opaque type.  This is
   // because we cannot determine the size of an opaque type.
@@ -86,77 +93,6 @@ RegisterGlobalVariables::registerGV (GlobalVariable * GV,
 
   // Update statistics
   ++RegisteredGVs;
-}
-
-bool
-RegisterGlobalVariables::runOnModule(Module & M) {
-  init(M, "pool_register_global");
-
-  //
-  // Get required analysis passes.
-  //
-  TD       = &M.getDataLayout();
-
-  //
-  // Create a skeleton function that will register the global variables.
-  //
-  Type * VoidTy = Type::getVoidTy (M.getContext());
-  Constant * CF = M.getOrInsertFunction ("sc.register_globals", VoidTy, NULL);
-  Function * F = dyn_cast<Function>(CF);
-
-  //
-  // Create the basic registration function.
-  //
-  Instruction * InsertPt = CreateRegistrationFunction (F);
-
-  //
-  // Skip over several types of globals, including:
-  //  llvm.used
-  //  llvm.noinline
-  //  llvm.global_ctors
-  //  Any global pool descriptor
-  //  Any global in the meta-data seciton
-  //
-  // The llvm.global_ctors requires special note.  Apparently, it will not
-  // be code generated as the list of constructors if it has any uses
-  // within the program.  This transform must ensure, then, that it is
-  // never used, even if such a use would otherwise be innocuous.
-  //
-  Module::global_iterator GI = M.global_begin(), GE = M.global_end();
-  for ( ; GI != GE; ++GI) {
-    GlobalVariable *GV = dyn_cast<GlobalVariable>(GI);
-    if (!GV) continue;
-
-    // Don't register  external global variables
-    //if (GV->isDeclaration()) continue;
-
-    std::string name = GV->getName();
-
-    // Skip globals in special sections
-    if (!strcmp((GV->getSection()), "llvm.metadata")) continue;
-
-    if (strncmp(name.c_str(), "llvm.", 5) == 0) continue;
-    if (strncmp(name.c_str(), "__poolalloc", 11) == 0) continue;
-   
-    // Linking fails when registering objects in section exitcall.exit
-    // This is needed for the Linux kernel.
-    if (!strcmp(GV->getSection(), ".exitcall.exit")) continue;
-
-    //
-    // Skip globals that may not be emitted into the final executable.
-    //
-    if (GV->hasAvailableExternallyLinkage()) continue;
-
-    //
-    // Skip all external globals if registerExternal is false. registerExternal
-    // is set to false in bbac.
-    //
-    if ((!registerExternal) && GV->hasExternalLinkage()) continue;
-
-    registerGV(GV, InsertPt);    
-  }
-
-  return true;
 }
 
 bool

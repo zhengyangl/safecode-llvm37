@@ -57,17 +57,85 @@ protected:
 
 /// Register the bound information of global variables.
 /// All registeration are placed at sc.register_globals
+template<bool registerExternal>
 class RegisterGlobalVariables : public RegisterVariables {
-private:
-  const bool registerExternal;
 public:
   static char ID;
-  RegisterGlobalVariables(bool isRegisterExternal = true) : RegisterVariables(ID),
-                                                            registerExternal(isRegisterExternal) {}
-  const char * getPassName() const 
-  { return "Register Global Variables into Pools"; }
+  RegisterGlobalVariables() : RegisterVariables(ID) {}
+  const char * getPassName() const {
+    if (registerExternal)
+      return "Register Global Variables into Pools";
+    else
+      return "Register Global Variables into Pools without Externals";
+  }
+  virtual bool runOnModule(llvm::Module & M) {
+    init(M, "pool_register_global");
 
-  virtual bool runOnModule(llvm::Module & M);
+    //
+    // Get required analysis passes.
+    //
+    TD       = &M.getDataLayout();
+
+    //
+    // Create a skeleton function that will register the global variables.
+    //
+    Type * VoidTy = Type::getVoidTy (M.getContext());
+    Constant * CF = M.getOrInsertFunction ("sc.register_globals", VoidTy, NULL);
+    Function * F = dyn_cast<Function>(CF);
+
+    //
+    // Create the basic registration function.
+    //
+    Instruction * InsertPt = CreateRegistrationFunction (F);
+
+    //
+    // Skip over several types of globals, including:
+    //  llvm.used
+    //  llvm.noinline
+    //  llvm.global_ctors
+    //  Any global pool descriptor
+    //  Any global in the meta-data seciton
+    //
+    // The llvm.global_ctors requires special note.  Apparently, it will not
+    // be code generated as the list of constructors if it has any uses
+    // within the program.  This transform must ensure, then, that it is
+    // never used, even if such a use would otherwise be innocuous.
+    //
+    Module::global_iterator GI = M.global_begin(), GE = M.global_end();
+    for ( ; GI != GE; ++GI) {
+      GlobalVariable *GV = dyn_cast<GlobalVariable>(GI);
+      if (!GV) continue;
+
+      // Don't register  external global variables
+      //if (GV->isDeclaration()) continue;
+
+      std::string name = GV->getName();
+
+      // Skip globals in special sections
+      if (!strcmp((GV->getSection()), "llvm.metadata")) continue;
+
+      if (strncmp(name.c_str(), "llvm.", 5) == 0) continue;
+      if (strncmp(name.c_str(), "__poolalloc", 11) == 0) continue;
+
+      // Linking fails when registering objects in section exitcall.exit
+      // This is needed for the Linux kernel.
+      if (!strcmp(GV->getSection(), ".exitcall.exit")) continue;
+
+      //
+      // Skip globals that may not be emitted into the final executable.
+      //
+      if (GV->hasAvailableExternallyLinkage()) continue;
+
+      //
+      // Skip all external globals if registerExternal is false. registerExternal
+      // is set to false in bbac.
+      //
+      if((!registerExternal) && GV->hasExternalLinkage()) continue;
+      registerGV(GV, InsertPt);
+    }
+
+    return true;
+  }
 
   virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const {
     AU.setPreservesCFG();
