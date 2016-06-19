@@ -85,8 +85,41 @@ bool InstrumentMemoryAccesses::doInitialization(Module &M) {
   SizeTy = IntegerType::getInt64Ty(M.getContext());
 
   // Create function prototypes
-  M.getOrInsertFunction("__loadcheck", VoidTy, VoidPtrTy, SizeTy, NULL);
-  M.getOrInsertFunction("__storecheck", VoidTy, VoidPtrTy, SizeTy, NULL);
+  Constant * LoadCheck = M.getOrInsertFunction("__loadcheck", VoidTy, VoidPtrTy, SizeTy, NULL);
+  Constant * StoreCheck = M.getOrInsertFunction("__storecheck", VoidTy, VoidPtrTy, SizeTy, NULL);
+
+  //
+  // __loadcheck and __storecheck prototypes must survive from optimizations. We
+  // append these two prototypes to llvm.compiler.used global to prevent the compiler
+  // from touching these prototypes. To know more about llvm.compiler.used, please
+  // read http://llvm.org/docs/LangRef.html#id794
+  //
+  std::vector<Constant *> CurrentLLVMCompilerUsed;
+  GlobalVariable * LLVMCompilerUsed = M.getNamedGlobal ("llvm.compiler.used");
+  if (LLVMCompilerUsed) {
+    if (Constant * C = LLVMCompilerUsed->getInitializer() ) {
+      for (unsigned index = 0; index < C->getNumOperands(); ++index) {
+        CurrentLLVMCompilerUsed.push_back
+            (dyn_cast<Constant>(C->getOperand (index)->stripPointerCasts()));
+      }
+    }
+  }
+  CurrentLLVMCompilerUsed.push_back(LoadCheck->stripPointerCasts());
+  CurrentLLVMCompilerUsed.push_back(StoreCheck->stripPointerCasts());
+  ArrayType * AT = ArrayType::get (CurrentLLVMCompilerUsed.back()-> getType(),
+                                   CurrentLLVMCompilerUsed.size());
+  Constant * NewC = ConstantArray::get (AT, CurrentLLVMCompilerUsed);
+  Value * NewLLVMCompilerUsed = new GlobalVariable (M,
+                                                    NewC->getType(),
+                                                    false,
+                                                    GlobalValue::AppendingLinkage,
+                                                    NewC,
+                                                    "llvm.compiler.used");
+  if (LLVMCompilerUsed) {
+    NewLLVMCompilerUsed->takeName (LLVMCompilerUsed);
+    LLVMCompilerUsed->eraseFromParent ();
+  }
+
   return true;
 }
 
@@ -104,6 +137,41 @@ bool InstrumentMemoryAccesses::runOnFunction(Function &F) {
 
   // Visit all of the instructions in the function.
   visit(F);
+
+  //
+  // We remove __loadcheck and __storecheck from llvm.compiler.used after
+  // everything done.
+  //
+  Module * M = F.getEntryBlock().getModule();
+  GlobalVariable * LLVMCompilerUsed = M->getNamedGlobal ("llvm.compiler.used");
+  if(!LLVMCompilerUsed) return true;
+
+  std::vector<Constant *> CurrentLLVMCompilerUsed;
+  if (Constant * I = LLVMCompilerUsed->getInitializer() ) {
+    for (unsigned index = 0; index < I->getNumOperands(); ++index) {
+      if (Constant * C= dyn_cast<Constant>(I->getOperand (index)->stripPointerCasts()))
+      {
+        if (C->getName() != "__loadcheck" && C->getName() != "__storecheck")
+          CurrentLLVMCompilerUsed.push_back(C);
+      }
+    }
+  }
+
+  if (CurrentLLVMCompilerUsed.empty())
+  {
+    LLVMCompilerUsed->eraseFromParent ();
+    return true;
+  }
+  ArrayType * AT = ArrayType::get (CurrentLLVMCompilerUsed.back() -> getType(),
+                                   CurrentLLVMCompilerUsed.size());
+  Constant * NewC = ConstantArray::get (AT, CurrentLLVMCompilerUsed);
+  Value * NewLLVMCompilerUsed = new GlobalVariable (NewC->getType(),
+                                                    false,
+                                                    GlobalValue::AppendingLinkage,
+                                                    NewC,
+                                                    "llvm.compiler.used");
+  NewLLVMCompilerUsed->takeName (LLVMCompilerUsed);
+  LLVMCompilerUsed->eraseFromParent ();
   return true;
 }
 

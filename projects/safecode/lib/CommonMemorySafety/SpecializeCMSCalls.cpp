@@ -107,6 +107,18 @@ void SpecializeCMSCalls::specialize(Module &M, StringRef Before,
   for (Value::user_iterator UI = From->user_begin(), E = From->user_end();
         UI != E;
         ++UI) {
+    //
+    // FIXME
+    // After I insert the __loadcheck and __storecheck prototype to llvm.compiler.used
+    // global, it will catch a extra user here:
+    //
+    //   [2 x void (i8*, i64)*] [void (i8*, i64)* @__loadcheck, void (i8*, i64)* @__storecheck]
+    //
+    // Temporarily, I write the following line to ignore this user. Is there a
+    // better way here?
+    //
+    if (isa<ConstantArray>(*UI)) continue;
+
     // Only call instructions are supposed to exist.
     CallInst *CI = cast<CallInst>(*UI);
 
