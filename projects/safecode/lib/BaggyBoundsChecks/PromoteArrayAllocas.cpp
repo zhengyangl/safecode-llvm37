@@ -132,7 +132,7 @@ PromoteArrayAllocas::insertFreeForAllocaOutOfEntryBlock (AllocaInst & A,
                  SE = pred_end(frontierBlock);
              SI != SE; ++SI) {
           BasicBlock *predecessorBlock = *SI;
-          if (domTree->dominates (predecessorBlock, CurrentBlock)) {
+          if (domTree->dominates (CurrentBlock, predecessorBlock)) {
             // Get the terminator
             Instruction *InsertPt = predecessorBlock->getTerminator();
             ArrayRef<Value *> args(MallocInst);

@@ -196,7 +196,7 @@ ConvertUnsafeAllocas::InsertFreesAtEnd(Instruction *MI) {
                            SE = pred_end(frontierBlock);
                            SI != SE; ++SI) {
           BasicBlock *predecessorBlock = *SI;
-          if (domTree->dominates (predecessorBlock, currentBlock)) {
+          if (domTree->dominates (currentBlock, predecessorBlock)) {
             // Get the terminator
             Instruction *InsertPt = predecessorBlock->getTerminator();
             new FreeInst(MI, InsertPt);
