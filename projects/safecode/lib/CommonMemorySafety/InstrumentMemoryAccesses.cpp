@@ -16,6 +16,7 @@
 #define DEBUG_TYPE "instrument-memory-accesses"
 
 #include "CommonMemorySafetyPasses.h"
+#include "safecode/Utility.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
@@ -52,6 +53,7 @@ namespace {
     InstrumentMemoryAccesses(): FunctionPass(ID) { }
     virtual bool doInitialization(Module &M);
     virtual bool runOnFunction(Function &F);
+    virtual bool doFinalization(Module &M);
     
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.setPreservesCFG();
@@ -94,32 +96,8 @@ bool InstrumentMemoryAccesses::doInitialization(Module &M) {
   // from touching these prototypes. To know more about llvm.compiler.used, please
   // read http://llvm.org/docs/LangRef.html#id794
   //
-  std::vector<Constant *> CurrentLLVMCompilerUsed;
-  GlobalVariable * LLVMCompilerUsed = M.getNamedGlobal ("llvm.compiler.used");
-  if (LLVMCompilerUsed) {
-    if (Constant * C = LLVMCompilerUsed->getInitializer() ) {
-      for (unsigned index = 0; index < C->getNumOperands(); ++index) {
-        CurrentLLVMCompilerUsed.push_back
-            (dyn_cast<Constant>(C->getOperand (index)->stripPointerCasts()));
-      }
-    }
-  }
-  CurrentLLVMCompilerUsed.push_back(LoadCheck->stripPointerCasts());
-  CurrentLLVMCompilerUsed.push_back(StoreCheck->stripPointerCasts());
-  ArrayType * AT = ArrayType::get (CurrentLLVMCompilerUsed.back()-> getType(),
-                                   CurrentLLVMCompilerUsed.size());
-  Constant * NewC = ConstantArray::get (AT, CurrentLLVMCompilerUsed);
-  Value * NewLLVMCompilerUsed = new GlobalVariable (M,
-                                                    NewC->getType(),
-                                                    false,
-                                                    GlobalValue::AppendingLinkage,
-                                                    NewC,
-                                                    "llvm.compiler.used");
-  if (LLVMCompilerUsed) {
-    NewLLVMCompilerUsed->takeName (LLVMCompilerUsed);
-    LLVMCompilerUsed->eraseFromParent ();
-  }
-
+  registerLLVMCompilerUsed(M, LoadCheck);
+  registerLLVMCompilerUsed(M, StoreCheck);
   return true;
 }
 
@@ -138,40 +116,16 @@ bool InstrumentMemoryAccesses::runOnFunction(Function &F) {
   // Visit all of the instructions in the function.
   visit(F);
 
-  //
-  // We remove __loadcheck and __storecheck from llvm.compiler.used after
-  // everything done.
-  //
-  Module * M = F.getEntryBlock().getModule();
-  GlobalVariable * LLVMCompilerUsed = M->getNamedGlobal ("llvm.compiler.used");
-  if(!LLVMCompilerUsed) return true;
+  return true;
+}
 
-  std::vector<Constant *> CurrentLLVMCompilerUsed;
-  if (Constant * I = LLVMCompilerUsed->getInitializer() ) {
-    for (unsigned index = 0; index < I->getNumOperands(); ++index) {
-      if (Constant * C= dyn_cast<Constant>(I->getOperand (index)->stripPointerCasts()))
-      {
-        if (C->getName() != "__loadcheck" && C->getName() != "__storecheck")
-          CurrentLLVMCompilerUsed.push_back(C);
-      }
-    }
-  }
-
-  if (CurrentLLVMCompilerUsed.empty())
-  {
-    LLVMCompilerUsed->eraseFromParent ();
-    return true;
-  }
-  ArrayType * AT = ArrayType::get (CurrentLLVMCompilerUsed.back() -> getType(),
-                                   CurrentLLVMCompilerUsed.size());
-  Constant * NewC = ConstantArray::get (AT, CurrentLLVMCompilerUsed);
-  Value * NewLLVMCompilerUsed = new GlobalVariable (NewC->getType(),
-                                                    false,
-                                                    GlobalValue::AppendingLinkage,
-                                                    NewC,
-                                                    "llvm.compiler.used");
-  NewLLVMCompilerUsed->takeName (LLVMCompilerUsed);
-  LLVMCompilerUsed->eraseFromParent ();
+//
+// We remove __loadcheck and __storecheck from llvm.compiler.used after
+// everything is done.
+//
+bool InstrumentMemoryAccesses::doFinalization (Module &M) {
+  unregisterLLVMCompilerUsed(M, LoadCheckFunction);
+  unregisterLLVMCompilerUsed(M, StoreCheckFunction);
   return true;
 }
 

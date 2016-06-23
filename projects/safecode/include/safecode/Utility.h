@@ -495,6 +495,96 @@ removeInvokeUnwindPHIs(InvokeInst* Invoke) {
     (*I)->removeIncomingValue(InvokeBlock);
 }
 
+//
+// Function: registerLLVMCompilerUsed
+// Description:
+//  Register llvm.compiler.used constant, making the constant survive from
+//  optimizations.
+//
+static inline void
+registerLLVMCompilerUsed (Module &M, Constant *C){
+  std::vector<Constant *> CurrentLLVMCompilerUsed;
+  //
+  // If there exists a llvm.compiler.used global array in the module, collect all element
+  // in that array.
+  //
+  GlobalVariable * LLVMCompilerUsed = M.getNamedGlobal ("llvm.compiler.used");
+  if (LLVMCompilerUsed) {
+    if (Constant * I = LLVMCompilerUsed->getInitializer() ) {
+      for (unsigned index = 0; index < I->getNumOperands(); ++index) {
+        CurrentLLVMCompilerUsed.push_back
+            (ConstantExpr::getZExtOrBitCast(
+                cast<Constant> (I->getOperand(index)->stripPointerCasts()),
+                getVoidPtrType(M)));
+      }
+    }
+  }
+  // Insert the constant which needs to be registered.
+  CurrentLLVMCompilerUsed.push_back (ConstantExpr::getZExtOrBitCast(C->stripPointerCasts(),
+                                                                    getVoidPtrType(M)));
+  // Replace the old llvm.compiler.used global with the new one.
+  ArrayType * AT = ArrayType::get (CurrentLLVMCompilerUsed.back()-> getType(),
+                                   CurrentLLVMCompilerUsed.size());
+  Constant * NewC = ConstantArray::get (AT, CurrentLLVMCompilerUsed);
+  Value * NewLLVMCompilerUsed = new GlobalVariable (M,
+                                                    NewC->getType(),
+                                                    false,
+                                                    GlobalValue::AppendingLinkage,
+                                                    NewC,
+                                                    "llvm.compiler.used");
+  if (LLVMCompilerUsed) {
+    NewLLVMCompilerUsed->takeName (LLVMCompilerUsed);
+    LLVMCompilerUsed->eraseFromParent ();
+  }
 }
+
+//
+// Function: unregisterLLVMCompilerUsed
+// Description:
+//  Unregister llvm.compiler.used constant.
+//
+static inline void
+unregisterLLVMCompilerUsed (Module &M, Constant *C){
+  GlobalVariable * LLVMCompilerUsed = M.getNamedGlobal ("llvm.compiler.used");
+  // If there is no llvm.compiler.used global, do nothing.
+  if(!LLVMCompilerUsed) return;
+  std::vector<Constant *> CurrentLLVMCompilerUsed;
+
+  // Collect all constants from the global array, except the one which is going to be
+  // unregistered.
+  if (Constant * I = LLVMCompilerUsed->getInitializer() ) {
+    for (unsigned index = 0; index < I->getNumOperands(); ++index) {
+      if (Constant * IC= dyn_cast<Constant>(I->getOperand (index)->stripPointerCasts()))
+      {
+        if (IC != C->stripPointerCasts())
+          CurrentLLVMCompilerUsed.push_back (ConstantExpr::getZExtOrBitCast(IC,
+                                                                            getVoidPtrType(M)));
+      }
+    }
+  }
+
+  // If the result vector contains nothing, then we simply remove llvm.compiler.used global
+  // and return.
+  if (CurrentLLVMCompilerUsed.empty())
+  {
+    LLVMCompilerUsed->eraseFromParent();
+    return;
+  }
+
+  // If there is still some constants left in the array, we put the array without the
+  // unregistered constant back.
+  ArrayType * AT = ArrayType::get (CurrentLLVMCompilerUsed.back() -> getType(),
+                                   CurrentLLVMCompilerUsed.size());
+  Constant * NewC = ConstantArray::get (AT, CurrentLLVMCompilerUsed);
+  Value * NewLLVMCompilerUsed = new GlobalVariable (NewC->getType(),
+                                                    false,
+                                                    GlobalValue::AppendingLinkage,
+                                                    NewC,
+                                                    "llvm.compiler.used");
+  NewLLVMCompilerUsed->takeName (LLVMCompilerUsed);
+  LLVMCompilerUsed->eraseFromParent ();
+}
+
+} // end namespace llvm
 
 #endif

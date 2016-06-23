@@ -131,6 +131,9 @@ InsertGEPChecks::doInitialization (Module & M) {
   // loops by the standard loop optimization passes.
   //
   (cast<Function>(F))->addFnAttr (Attribute::ReadOnly);
+  // Insert boundscheckui to llvm.compiler.used to make it survive from compiler
+  // optimization.
+  registerLLVMCompilerUsed (M, F);
   return true;
 }
 
@@ -151,6 +154,13 @@ InsertGEPChecks::runOnFunction (Function & F) {
   // Visit all of the instructions in the function.
   //
   visit (F);
+  return true;
+}
+
+bool
+InsertGEPChecks::doFinalization (Module & M) {
+  // unregister the PoolCheckArrayUI from llvm.compiler.used
+  unregisterLLVMCompilerUsed (M, PoolCheckArrayUI);
   return true;
 }
 

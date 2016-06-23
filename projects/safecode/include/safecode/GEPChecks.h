@@ -40,6 +40,7 @@ struct InsertGEPChecks : public FunctionPass, InstVisitor<InsertGEPChecks> {
     InsertGEPChecks () : FunctionPass (ID) { }
     const char *getPassName() const { return "Insert GEP Checks"; }
     virtual bool  doInitialization (Module & M);
+    virtual bool doFinalization (Module & M);
     virtual bool runOnFunction(Function &F);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       // Required passes
