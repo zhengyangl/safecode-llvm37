@@ -113,11 +113,18 @@ InsertFreeChecks::doInitialization (Module & M) {
   //
   Type * VoidTy  = Type::getVoidTy (M.getContext());
   Type * VoidPtrTy = getVoidPtrType (M.getContext());
-  M.getOrInsertFunction ("poolcheck_freeui",
-                         VoidTy,
-                         VoidPtrTy,
-                         VoidPtrTy,
-                         NULL);
+  Func = M.getOrInsertFunction ("poolcheck_freeui",
+                                VoidTy,
+                                VoidPtrTy,
+                                VoidPtrTy,
+                                NULL);
+  registerLLVMCompilerUsed (M, Func);
+  return true;
+}
+
+bool
+InsertFreeChecks::doFinalization (Module & M) {
+  unregisterLLVMCompilerUsed(M, Func);
   return true;
 }
 

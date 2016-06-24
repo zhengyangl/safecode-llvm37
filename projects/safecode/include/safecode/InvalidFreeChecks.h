@@ -34,6 +34,7 @@ struct InsertFreeChecks : public FunctionPass, InstVisitor<InsertFreeChecks> {
     InsertFreeChecks () : FunctionPass (ID) { }
     const char *getPassName() const { return "Insert Invalid Free Checks"; }
     virtual bool  doInitialization (Module & M);
+    virtual bool doFinalization (Module & M);
     virtual bool runOnFunction(Function & F);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       // Preserve the CFG
@@ -50,6 +51,8 @@ struct InsertFreeChecks : public FunctionPass, InstVisitor<InsertFreeChecks> {
       CallSite CS(&II);
       visitCallSite (CS);
     }
+  protected:
+    Constant * Func;
 };
 
 }
