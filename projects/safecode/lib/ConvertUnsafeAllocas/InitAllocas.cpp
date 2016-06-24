@@ -73,32 +73,6 @@ getInsertionPoint (AllocaInst & AI) {
 
 namespace llvm {
 
-bool
-InitAllocas::doInitialization (Module & M) {
-  //
-  // Create needed LLVM types.
-  //
-  Type * VoidType  = Type::getVoidTy(M.getContext());
-  Type * Int1Type  = IntegerType::getInt1Ty(M.getContext());
-  Type * Int8Type  = IntegerType::getInt8Ty(M.getContext());
-  Type * Int32Type = IntegerType::getInt32Ty(M.getContext());
-  Type * VoidPtrType = PointerType::getUnqual(Int8Type);
-
-  //
-  // Add the memset function to the program.
-  //
-  M.getOrInsertFunction ("llvm.memset.p0i8.i32",
-                         VoidType,
-                         VoidPtrType,
-                         Int8Type,
-                         Int32Type,
-                         Int32Type,
-                         Int1Type,
-                         NULL);
-
-  return true;
-}
-
 //
 // Method: visitAllocaInst()
 //
@@ -151,12 +125,32 @@ InitAllocas::visitAllocaInst (AllocaInst & AI) {
 }
 
 bool
-InitAllocas::runOnFunction (Function &F) {
-  // Don't bother processing external functions
-  if (F.isDeclaration())
-    return false;
+InitAllocas::runOnModule (Module &M) {
+  Type * VoidType  = Type::getVoidTy(M.getContext());
+  Type * Int1Type  = IntegerType::getInt1Ty(M.getContext());
+  Type * Int8Type  = IntegerType::getInt8Ty(M.getContext());
+  Type * Int32Type = IntegerType::getInt32Ty(M.getContext());
+  Type * VoidPtrType = PointerType::getUnqual(Int8Type);
 
-  visit (F);
+  //
+  // Add the memset function to the program.
+  //
+  M.getOrInsertFunction ("llvm.memset.p0i8.i32",
+                         VoidType,
+                         VoidPtrType,
+                         Int8Type,
+                         Int32Type,
+                         Int32Type,
+                         Int1Type,
+                         NULL);
+  // Don't bother processing external functions
+  for (Module::iterator F = M.begin(), E= M.end(); F != E; ++F)
+  {
+    if(F->isDeclaration())
+      continue;
+
+    visit (*F);
+  }
   return true;
 }
 

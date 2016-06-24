@@ -33,13 +33,12 @@ namespace llvm {
 //  allocation (since the heap allocator must provide similar protection for
 //  heap allocated memory) or be inserting special initialization code.
 //
-struct InitAllocas : public FunctionPass, InstVisitor<InitAllocas> {
+struct InitAllocas : public ModulePass, InstVisitor<InitAllocas> {
   public:
     static char ID;
-    InitAllocas() : FunctionPass(ID) {}
+    InitAllocas() : ModulePass(ID) {}
     const char *getPassName() const { return "Init Alloca Pass"; }
-    virtual bool runOnFunction (Function &F);
-    bool doInitialization (Module & M);
+    virtual bool runOnModule (Module &M);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.setPreservesCFG();
     }
