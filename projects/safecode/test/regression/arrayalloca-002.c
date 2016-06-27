@@ -1,4 +1,4 @@
-// RUN: test.sh -p -s "@malloc" -t %t %s 
+// RUN: test.sh -p -s "@malloc" -t %t %s
 //
 // TEST: arrayalloca-002
 //
@@ -8,17 +8,12 @@
 //
 
 int
-get_size (){
-  return 4;
-}
-
-int
 main (int argc, char ** argv){
   int *p = 0;
   if(argc)
   {
-    int a[get_size()];
+    int a[argc];
     p = a;
   }
-  return *p;
+  return (int)p;
 }
