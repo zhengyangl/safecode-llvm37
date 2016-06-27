@@ -17,7 +17,7 @@ int next_pow_of_2(size_t size) {
   return (i < 16 ? 16 : i);
 }
 
-extern "C" void* malloc(size_t size) {
+extern "C" void* __sc_bb_malloc(size_t size) {
   size_t adjusted_size = size + sizeof(BBMetaData);
   size_t aligned_size = next_pow_of_2(adjusted_size);
   void *vp;
@@ -29,7 +29,7 @@ extern "C" void* malloc(size_t size) {
   return vp;
 }
 
-extern "C" void* calloc(size_t nmemb, size_t size) {
+extern "C" void* __sc_bb_calloc(size_t nmemb, size_t size) {
   size_t aligned_size = next_pow_of_2(nmemb*size+sizeof(BBMetaData));
   void *vp;
   posix_memalign(&vp, aligned_size, aligned_size);
@@ -40,7 +40,7 @@ extern "C" void* calloc(size_t nmemb, size_t size) {
   return vp;
 }
 
-extern "C" void* realloc(void *ptr, size_t size) {
+extern "C" void* __sc_bb_realloc(void *ptr, size_t size) {
   if (ptr == NULL) {
     return malloc(size);
   }

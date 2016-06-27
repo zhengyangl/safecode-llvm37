@@ -62,6 +62,7 @@
 #include "safecode/SAFECodePasses.h"
 #include "safecode/SpecializeCMSCalls.h"
 #include "safecode/PromoteArrayAllocas.h"
+#include "safecode/RewriteHeapAllocations.h"
 #include "SoftBound/InitializeSoftBound.h"
 #include "SoftBound/SoftBoundCETSPass.h"
 
@@ -519,6 +520,7 @@ void EmitAssemblyHelper::CreatePasses() {
   if (CodeGenOpts.BaggyBounds) {
     MPM->add (new PromoteArrayAllocas());
     MPM->add (new InsertBaggyBoundsChecks());
+    MPM->add (new RewriteHeapAllocations());
   }
 
   PMBuilder.populateModulePassManager(*MPM);
