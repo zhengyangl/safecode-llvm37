@@ -42,7 +42,7 @@ extern "C" void* __sc_bb_calloc(size_t nmemb, size_t size) {
 
 extern "C" void* __sc_bb_realloc(void *ptr, size_t size) {
   if (ptr == NULL) {
-    return malloc(size);
+    return __sc_bb_malloc(size);
   }
 
   size += sizeof(BBMetaData);
