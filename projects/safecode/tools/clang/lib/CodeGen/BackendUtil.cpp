@@ -519,6 +519,8 @@ void EmitAssemblyHelper::CreatePasses() {
 
   if (CodeGenOpts.BaggyBounds) {
     MPM->add (new PromoteArrayAllocas());
+    // run mem2reg pass to convert the loads/stores inserted by PromoteArrayAllocas to SSA form.
+    MPM->add (createPromoteMemoryToRegisterPass());
     MPM->add (new InsertBaggyBoundsChecks());
     MPM->add (new RewriteHeapAllocations());
   }

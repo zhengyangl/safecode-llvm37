@@ -47,8 +47,6 @@ class PromoteArrayAllocas : public ModulePass,
     virtual bool runOnModule(Module &M);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       AU.setPreservesCFG();
-      AU.addRequired<DominanceFrontier>();
-      AU.addRequired<DominatorTreeWrapperPass>();
     };
 
     void visitAllocaInst(AllocaInst &A);
@@ -57,12 +55,11 @@ class PromoteArrayAllocas : public ModulePass,
     Constant *free;
     void createProtos(Module & M);
     Instruction * transformArrayAlloca (AllocaInst & A);
-    bool insertFreeForAllocaInEntryBlock(AllocaInst & A, Instruction * MallocInst);
-    bool insertFreeForAllocaOutOfEntryBlock(AllocaInst &A, Instruction * MallocInst);
+    bool insertFreeBeforeLeavingFunction(Instruction * Inst, bool LoadInstInsertion);
+    Instruction * installMallocHelper(Instruction * MallocInst);
     const DataLayout * TD;
 
     Type * VoidType;
-    Type * Int32Type;
     Type * Int64Type;
 };
 
