@@ -1,4 +1,4 @@
-// RUN: test.sh -p -s "@malloc" -t %t %s
+// RUN: test.sh -e -s "@malloc" -t %t %s
 //
 // TEST: arrayalloca-002
 //
