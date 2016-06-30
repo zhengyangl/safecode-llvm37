@@ -62,6 +62,8 @@ RewriteHeapAllocations::runOnModule (Module & M) {
   rewrite (M, "malloc", "__sc_bb_malloc");
   rewrite (M, "calloc", "__sc_bb_calloc");
   rewrite (M, "realloc","__sc_bb_realloc");
+  rewrite (M, "strdup", "__sc_bb_strdup");
+  rewrite (M, "getenv", "__sc_bb_getenv");
 
   return true;
 }

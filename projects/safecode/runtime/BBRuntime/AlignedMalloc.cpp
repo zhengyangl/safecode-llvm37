@@ -56,3 +56,35 @@ extern "C" void* __sc_bb_realloc(void *ptr, size_t size) {
   data->pool = NULL;
   return vp;
 }
+
+extern "C" char* __sc_bb_getenv(const char *ptr) {
+  char * env = getenv(ptr);
+  if (NULL == env) {
+    return NULL;
+  }
+  size_t env_str_size = strlen(env) + 1;
+  size_t adjusted_size = env_str_size + sizeof(BBMetaData);
+  size_t aligned_size = next_pow_of_2(adjusted_size);
+  void *vp;
+  posix_memalign(&vp, aligned_size, aligned_size);
+  memcpy(vp, env, env_str_size);
+  BBMetaData *data = (BBMetaData*)((uintptr_t)vp + aligned_size - sizeof(BBMetaData));
+  data->size = env_str_size;
+  data->pool = NULL;
+  return (char *)vp;
+}
+
+extern "C" char* __sc_bb_strdup(const char *ptr) {
+  if (NULL == ptr)
+    return NULL;
+  size_t str_size = strlen(ptr) + 1;
+  size_t adjusted_size = str_size + sizeof(BBMetaData);
+  size_t aligned_size = next_pow_of_2(adjusted_size);
+  void *vp;
+  posix_memalign(&vp, aligned_size, aligned_size);
+  memcpy(vp, ptr, str_size);
+  BBMetaData *data = (BBMetaData*)((uintptr_t)vp + aligned_size - sizeof(BBMetaData));
+  data->size = str_size;
+  data->pool = NULL;
+  return (char *)vp;
+}
