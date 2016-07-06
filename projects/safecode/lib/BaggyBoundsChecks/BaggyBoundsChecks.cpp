@@ -228,7 +228,7 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
   //
   GlobalValue::LinkageTypes LinkTy = GV->getLinkage();
   if (GV->getLinkage() == GlobalValue::CommonLinkage)
-    LinkTy = GlobalValue::ExternalLinkage;
+    LinkTy = GlobalValue::WeakAnyLinkage;
 
   GlobalVariable *GV_new = new GlobalVariable (*(GV->getParent()),
                                                  newType,
