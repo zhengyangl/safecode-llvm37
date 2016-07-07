@@ -154,6 +154,14 @@ bb_poolcheck_debug (DebugPoolTy *Pool,
                  TAG,
                  const char * SourceFilep,
                  unsigned lineno) {
+  //
+  // If the memory access is zero bytes in length, don't report an error.
+  // This can happen on memcpy() and memset() calls that are instrumented
+  // with load/store checks.
+  //
+  if (length == 0)
+    return;
+
   // If the address being checked is errno, then the check can pass.
   unsigned char * errnoPtr = (unsigned char *) &errno;
   if ((unsigned char *)Node == errnoPtr) return;
@@ -211,6 +219,14 @@ bb_poolcheckui_debug (DebugPoolTy *Pool,
                  TAG,
                  const char * SourceFilep,
                  unsigned lineno) {
+  //
+  // If the memory access is zero bytes in length, don't report an error.
+  // This can happen on memcpy() and memset() calls that are instrumented
+  // with load/store checks.
+  //
+  if (length == 0)
+    return;
+
   // If the address being checked is errno, then the check can pass.
   unsigned char * errnoPtr = (unsigned char *) &errno;
   if ((unsigned char *)Node == errnoPtr) return;
