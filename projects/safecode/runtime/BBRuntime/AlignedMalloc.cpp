@@ -30,7 +30,8 @@ extern "C" void* __sc_bb_malloc(size_t size) {
 }
 
 extern "C" void* __sc_bb_calloc(size_t nmemb, size_t size) {
-  size_t aligned_size = next_pow_of_2(nmemb*size+sizeof(BBMetaData));
+  size_t adjusted_size = nmemb*size+sizeof(BBMetaData);
+  size_t aligned_size = next_pow_of_2(adjusted_size);
   void *vp;
   posix_memalign(&vp, aligned_size, aligned_size);
   memset(vp, 0, aligned_size);
@@ -45,8 +46,8 @@ extern "C" void* __sc_bb_realloc(void *ptr, size_t size) {
     return __sc_bb_malloc(size);
   }
 
-  size += sizeof(BBMetaData);
-  size_t aligned_size = next_pow_of_2(size);
+  size_t adjusted_size = size + sizeof(BBMetaData);
+  size_t aligned_size = next_pow_of_2(adjusted_size);
   void *vp;
   posix_memalign(&vp, aligned_size, aligned_size);
   memcpy(vp, ptr, size);
