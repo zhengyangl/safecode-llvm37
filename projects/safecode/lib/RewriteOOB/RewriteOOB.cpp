@@ -253,6 +253,9 @@ RewriteOOB::addGetActualValues (Module & M) {
       if (PtrToIntInst * CastInst = dyn_cast<PtrToIntInst>(&*I)) {
         Worklist.push_back (CastInst);
       }
+      if (GetElementPtrInst * GEPInst = dyn_cast<GetElementPtrInst>(&*I)) {
+        Worklist.push_back (GEPInst);
+      }
     }
 
     //
@@ -294,6 +297,11 @@ RewriteOOB::addGetActualValues (Module & M) {
           addGetActualValue(CastInst, 0);
           modified = true;
         }
+      }
+
+      if (GetElementPtrInst * GEPInst = dyn_cast<GetElementPtrInst>(I)) {
+        addGetActualValue(GEPInst, 0);
+        modified = true;
       }
     }
   }
