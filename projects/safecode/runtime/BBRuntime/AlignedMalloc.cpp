@@ -3,6 +3,13 @@
 #include <stdint.h>
 
 #include "safecode/Runtime/BBMetaData.h"
+#include "safecode/Runtime/BBRuntime.h"
+
+using namespace NAMESPACE_SC;
+
+extern void __sc_bb_poolregister (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes);
+extern void __sc_bb_poolunregister (DebugPoolTy *Pool, void * allocaptr);
+
 
 /* On a dlmalloc/ptmalloc malloc implementation, memalign is performed by allocating
  * a block of size (alignment+size), and then finding the correctly aligned location
@@ -88,4 +95,28 @@ extern "C" char* __sc_bb_strdup(const char *ptr) {
   data->size = str_size;
   data->pool = NULL;
   return (char *)vp;
+}
+
+extern "C" ssize_t __sc_bb_getline(char **lineptr, size_t *n, FILE *stream) {
+  char *output_str = NULL;
+  size_t leng = 0;
+  ssize_t read_len = getline(&output_str, &leng, stream);
+  __sc_bb_poolunregister(NULL, *lineptr);
+  free (*lineptr);
+  *lineptr = __sc_bb_strdup(output_str);
+  __sc_bb_poolregister (NULL, *lineptr, *n + 1);
+  *n = leng;
+  return read_len;
+}
+
+extern "C" ssize_t __sc_bb_getdelim(char **lineptr, size_t *n, int delim, FILE *stream) {
+  char *output_str = NULL;
+  size_t leng = 0;
+  ssize_t read_len = getdelim(&output_str, &leng, delim, stream);
+  __sc_bb_poolunregister(NULL, *lineptr);
+  free (*lineptr);
+  *lineptr = __sc_bb_strdup(output_str);
+  __sc_bb_poolregister (NULL, *lineptr, *n + 1);
+  *n = leng;
+  return read_len;
 }

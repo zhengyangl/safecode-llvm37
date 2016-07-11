@@ -64,6 +64,8 @@ RewriteHeapAllocations::runOnModule (Module & M) {
   rewrite (M, "realloc","__sc_bb_realloc");
   rewrite (M, "strdup", "__sc_bb_strdup");
   rewrite (M, "getenv", "__sc_bb_getenv");
+  rewrite (M, "getline", "__sc_bb_getline");
+  rewrite (M, "getdelim", "__sc_bb_getdelim");
 
   return true;
 }
