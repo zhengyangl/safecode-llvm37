@@ -86,7 +86,8 @@ compile()
   # Create bitcode file with SAFECode passes.
   $sc -g -S -emit-llvm -fmemsafety -bbc -fmemsafety-terminate -o $llfile $filename 2>&1 | tee $sclog
   # Compile and link bitcode.
-  $sc -o $scfile $llfile $link_files $sc_lib/libsc_dbg_rt.a $sc_lib/libpoolalloc_bitmap.a $sc_lib/libgdtoa.a -lstdc++
+  #  $sc -o $scfile $llfile $link_files $sc_lib/libsc_dbg_rt.a $sc_lib/libpoolalloc_bitmap.a $sc_lib/libgdtoa.a -lstdc++
+  $sc -o $scfile $llfile $link_files $sc_lib/libsc_bb_rt.a -lstdc++
 }
 
 # If requested, verify that the llvm code contains the 

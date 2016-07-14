@@ -511,7 +511,7 @@ lit-regression: $(TESTSCRIPT)
 	@mkdir -p $(REGRSNOBJ)
 	$(Verb) $(SETENV) \
 		PATH=$(PROJ_OBJ_ROOT)/$(BuildMode)/bin:$(LLVMToolDir):$(PROJ_OBJ_ROOT)/test/tools:$(PATH) \
-		$(MAKE) -C $(LLVM_OBJ_ROOT)/test check-local-lit TESTSUITE=$(REGRSN) ULIMIT=$(ULIMIT)
+		$(MAKE) -C $(LLVM_OBJ_ROOT)/test check-local-lit TESTSUITE=$(REGRSN) ULIMIT=$(ULIMIT) LIT_ARGS=-j1
 
 # All names of the files in the BOdiagsuite
 BODIAG_FILE_NAMES := $(notdir $(wildcard $(BODIAGSRC)/*.c))
