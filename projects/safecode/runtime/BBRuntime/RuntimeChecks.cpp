@@ -196,7 +196,7 @@ bb_poolcheck_debug (DebugPoolTy *Pool,
   uintptr_t ObjEnd = ObjStart + data->size - 1;
 
   uintptr_t NodeEnd = (uintptr_t)Node + length -1;
-  if (!(ObjStart <= NodeEnd) && (NodeEnd <= ObjEnd)) {
+  if (!((ObjStart <= NodeEnd) && (NodeEnd <= ObjEnd))) {
     DebugViolationInfo v;
     v.type = ViolationInfo::FAULT_LOAD_STORE,
     v.faultPC = __builtin_return_address(0),
@@ -260,7 +260,7 @@ bb_poolcheckui_debug (DebugPoolTy *Pool,
   uintptr_t ObjEnd = ObjStart + data->size - 1;
 
   uintptr_t NodeEnd = (uintptr_t)Node + length -1;
-  if (!(ObjStart <= NodeEnd) && (NodeEnd <= ObjEnd)) {
+  if (!((ObjStart <= NodeEnd) && (NodeEnd <= ObjEnd))) {
     DebugViolationInfo v;
     v.type = ViolationInfo::FAULT_LOAD_STORE,
     v.faultPC = __builtin_return_address(0),
