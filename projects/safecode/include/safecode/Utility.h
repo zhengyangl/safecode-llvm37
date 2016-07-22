@@ -70,6 +70,48 @@ PointerType * getVoidPtrType(LLVMContext & Context) {
 //  Given an LLVM value, insert a cast instruction to make it a given type.
 //
 static inline Value *
+castTo (Value * V, Type * Ty, Twine Name, BasicBlock * InsertBB) {
+  //
+  // Don't bother creating a cast if it's already the correct type.
+  //
+  assert (V && "castTo: trying to cast a NULL Value!\n");
+  if (V->getType() == Ty)
+    return V;
+
+  //
+  // If we're casting from one integer type to a smaller integer type, then
+  // use a truncate instruction.
+  //
+  IntegerType * newType = dyn_cast<IntegerType>(Ty);
+  IntegerType * oldType = dyn_cast<IntegerType>(V->getType());
+  if (newType && oldType) {
+    if (newType->getBitWidth() < oldType->getBitWidth()) {
+      return CastInst::CreateTruncOrBitCast (V, Ty, Name, InsertBB);
+    }
+  }
+
+  //
+  // If it's a constant, just create a constant expression.
+  //
+  if (Constant * C = dyn_cast<Constant>(V)) {
+    Constant * CE = ConstantExpr::getZExtOrBitCast (C, Ty);
+    return CE;
+  }
+
+  //
+  // Otherwise, insert a cast instruction.
+  //
+  return CastInst::CreateZExtOrBitCast (V, Ty, Name, InsertBB);
+}
+
+
+//
+// Function: castTo()
+//
+// Description:
+//  Given an LLVM value, insert a cast instruction to make it a given type.
+//
+static inline Value *
 castTo (Value * V, Type * Ty, Twine Name, Instruction * InsertPt) {
   //
   // Don't bother creating a cast if it's already the correct type.
