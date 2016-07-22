@@ -93,6 +93,19 @@ const size_t table_size = 1L<<28;
 //
 //===----------------------------------------------------------------------===//
 
+extern "C" void
+__sc_bb_emit_report (void *Node, const char* SourceFilep, unsigned lineno ) {
+  DebugViolationInfo v;
+  v.type = ViolationInfo::FAULT_LOAD_STORE,
+      v.faultPC = __builtin_return_address(0),
+      v.faultPtr = Node,
+      v.CWE = CWEBufferOverflow,
+      v.SourceFile = SourceFilep,
+      v.lineNo = lineno;
+  ReportMemoryViolation(&v);
+  return;
+}
+
 void *
 __sc_bb_poolinit(DebugPoolTy *Pool, unsigned NodeSize, unsigned) {
   return Pool;
@@ -225,6 +238,7 @@ pool_init_runtime(unsigned Dangling, unsigned RewriteOOB, unsigned Terminate) {
 //   size. This function stores the binary logarithm of the aligned size
 //   in the baggy bounds table.
 //
+static inline
 void
 __internal_register(DebugPoolTy *Pool,
                     void * allocaptr,

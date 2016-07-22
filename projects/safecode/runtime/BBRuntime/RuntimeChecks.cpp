@@ -140,6 +140,32 @@ _barebone_boundscheck (uintptr_t Source, uintptr_t Dest) {
   return RealDest;
 }
 
+extern "C" void*
+__sc_bb_getActualValueAndCheckAgain (uintptr_t Source, uintptr_t Dest) {
+  uintptr_t val = 1 ;
+  void * RealSrc = (void *)Source;
+  void * RealDest = (void *)Dest;
+  if (!isRewritePtr((void *)Source)) {
+    // Dest is not within the valid object in which Source was found.
+    RealDest = rewrite_ptr(NULL, RealDest, 0, 0, 0, 0);
+    return RealDest;
+  }
+
+  RealSrc = pchk_getActualValue(NULL, (void *)Source);
+  //
+  // Compute the real result pointer.
+  //
+  RealDest = (void *)((intptr_t) RealSrc + Dest - Source);
+  //
+  // Re-check the real result pointer.
+  //
+  val = _barebone_pointers_in_bounds((uintptr_t)RealSrc, (uintptr_t)RealDest);
+  if (!val) return RealDest;
+
+  RealDest = rewrite_ptr(NULL, RealDest, 0, 0, 0, 0);
+  return RealDest;
+}
+
 //
 // Function: poolcheck_debug()
 //
