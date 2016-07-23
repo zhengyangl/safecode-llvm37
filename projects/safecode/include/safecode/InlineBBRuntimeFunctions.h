@@ -16,6 +16,9 @@
 #define _INLINE_BB_RUNTIME_FUNCTIONS_H_
 
 #include "llvm/Pass.h"
+#include "llvm/Analysis/CallGraph.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/AliasAnalysis.h"
 #include "safecode/DebugInstrumentation.h"
 
 namespace llvm {
@@ -31,6 +34,9 @@ class InlineBBRuntimeFunctions : public ModulePass {
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.addRequired<DebugInstrument>();
+    AU.addRequired<AssumptionCacheTracker>();
+    AU.addRequired<CallGraphWrapperPass>();
+    AU.addRequired<AliasAnalysis>();
     return;
   }
  private:

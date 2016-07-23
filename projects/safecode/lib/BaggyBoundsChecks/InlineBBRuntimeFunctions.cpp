@@ -55,6 +55,11 @@ llvm::InlineBBRuntimeFunctions::inlineCheck (Function * F) {
   //
   if (!F) return false;
 
+  // Get prerequisites for InlineFunctionInfo
+  CallGraph &CG = getAnalysis<CallGraphWrapperPass>().getCallGraph();
+  AssumptionCacheTracker *ACT = &getAnalysis<AssumptionCacheTracker>();
+  AliasAnalysis *AA = &getAnalysis<AliasAnalysis>();
+
   //
   // Iterate though all calls to the function and search for pointers that are
   // checked but only used in comparisons.  If so, then schedule the check
@@ -68,10 +73,6 @@ llvm::InlineBBRuntimeFunctions::inlineCheck (Function * F) {
     // no interest to the organization.
     //
     if (CallInst * CI = dyn_cast<CallInst>(*FU)) {
-      //
-      // If the call instruction has no uses, we can remove it.
-      //
-      if (CI->use_begin() == CI->use_end())
         CallsToInline.push_back (CI);
     }
   }
@@ -87,7 +88,7 @@ llvm::InlineBBRuntimeFunctions::inlineCheck (Function * F) {
   //
   // Inline all of the fast calls we found.
   //
-  InlineFunctionInfo IFI;
+  InlineFunctionInfo IFI(&CG, AA, ACT);
   for (unsigned index = 0; index < CallsToInline.size(); ++index) {
     InlineFunction (CallsToInline[index], IFI);
     ++ InlinedBBChecks;
