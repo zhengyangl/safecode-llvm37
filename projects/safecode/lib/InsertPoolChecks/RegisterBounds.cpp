@@ -24,9 +24,6 @@
 
 using namespace llvm;
 
-template class RegisterGlobalVariables<true>;
-template class RegisterGlobalVariables<false>;
-
 namespace {
   // Statistics
   STATISTIC (RegisteredGVs,      "Number of registered global variables");
@@ -35,6 +32,9 @@ namespace {
 }
 
 namespace llvm {
+
+template class RegisterGlobalVariables<true>;
+template class RegisterGlobalVariables<false>;
 
 char RegisterMainArgs::ID = 0;
 char RegisterFunctionByvalArguments::ID=0;
