@@ -375,23 +375,57 @@ RewriteOOB::addGetActualValue (Instruction *SCI, unsigned operand) {
   // Insert the call to getActualValue()
   //
   Type * VoidPtrType = getVoidPtrType(Operand->getContext());
-  Value * OpVptr = castTo (Operand,
-                           VoidPtrType,
-                           Operand->getName() + ".casted",
-                           SCI);
+  if (Operand->getType()->isVectorTy()) {
+    Value * NewO;
+    unsigned OLength = Operand->getType()->getVectorNumElements();
+    for (unsigned po_i = 0; po_i < OLength ; ++po_i) {
+      Value * I = ConstantInt::get (Type::getInt64Ty(Operand->getContext()), po_i, false);
+      Value * POElement = ExtractElementInst::Create(Operand,
+                                                     I,
+                                                     Operand->getName() + ".extracted",
+                                                     SCI);
+      std::vector<Value *> args;
+      args.push_back (PH);
+      args.push_back (POElement);
+      CallInst *CI = CallInst::Create (GetActualValue,
+                                       args,
+                                       "getval",
+                                       SCI);
+      Instruction *CastBack = castTo (CI,
+                                      POElement->getType(),
+                                      Operand->getName()+".castback",
+                                      SCI);
+      if (po_i == 0) {
+        NewO = InsertElementInst::Create(UndefValue::get(VectorType::get(CastBack->getType(),
+                                                                         OLength)),
+                                         CastBack,
+                                         I,
+                                         "inserted",
+                                         SCI);
+      }
+      else
+        NewO = InsertElementInst::Create(NewO, CastBack, I, "inserted" ,SCI);
+    }
+    SCI->setOperand (operand, NewO);
+  } else {
+    Value * OpVptr = castTo (Operand,
+                             VoidPtrType,
+                             Operand->getName() + ".casted",
+                             SCI);
 
-  std::vector<Value *> args;
-  args.push_back (PH);
-  args.push_back (OpVptr);
-  CallInst *CI = CallInst::Create (GetActualValue,
-                                   args,
-                                   "getval",
-                                   SCI);
-  Instruction *CastBack = castTo (CI,
-                                  Operand->getType(),
-                                  Operand->getName()+".castback",
-                                  SCI);
-  SCI->setOperand (operand, CastBack);
+    std::vector<Value *> args;
+    args.push_back (PH);
+    args.push_back (OpVptr);
+    CallInst *CI = CallInst::Create (GetActualValue,
+                                     args,
+                                     "getval",
+                                     SCI);
+    Instruction *CastBack = castTo (CI,
+                                    Operand->getType(),
+                                    Operand->getName()+".castback",
+                                    SCI);
+    SCI->setOperand (operand, CastBack);
+  }
   return;
 }
 
