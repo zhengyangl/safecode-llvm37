@@ -172,6 +172,7 @@ extern "C" {
 
   void __sc_bb_funccheck (unsigned num, void *f, void *g, ...);
   void * pchk_getActualValue (PPOOL, void * src);
+  void * __sc_bb_getActualValue (PPOOL, void *src);
 
   // Change memory protections to detect dangling pointers
   void * bb_pool_shadow (void * Node, unsigned NumBytes);

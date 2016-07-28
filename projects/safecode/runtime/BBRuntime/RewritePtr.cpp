@@ -177,3 +177,8 @@ pchk_getActualValue (DebugPoolTy * Pool, void * p) {
   return p;
 }
 
+void *
+__sc_bb_getActualValue (DebugPoolTy * Pool, void * p) {
+  return pchk_getActualValue(Pool, p);
+}
+
