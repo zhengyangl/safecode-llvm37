@@ -92,6 +92,14 @@ exactcheck2_debug (char *source,
                    unsigned tag,
                    const char * SourceFile,
                    unsigned lineno) {
+  //
+  // If the memory access is zero bytes in length, don't report an error.
+  // This can happen on memcpy() and memset() calls that are instrumented
+  // with load/store checks.
+  //
+  if (size == 0)
+    return (void*) result;
+
   /*
    * If the pointer is within the object, the check passes.  Return the checked
    * pointer.

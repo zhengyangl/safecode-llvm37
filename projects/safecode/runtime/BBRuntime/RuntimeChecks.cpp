@@ -572,6 +572,14 @@ fastlscheck_debug(const char *base, const char *result, unsigned size,
                    unsigned tag,
                    const char * SourceFile,
                    unsigned lineno) {
+  //
+  // If the memory access is zero bytes in length, don't report an error.
+  // This can happen on memcpy() and memset() calls that are instrumented
+  // with load/store checks.
+  //
+  if (lslen == 0)
+    return;
+
   // If the address being checked is errno, then the check can pass.
   char * errnoPtr = (char *) &errno;
   if (result == errnoPtr) return;
