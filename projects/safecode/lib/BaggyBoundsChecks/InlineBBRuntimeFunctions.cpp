@@ -213,18 +213,10 @@ insertIsRewrittenPtr (Value *V,
   //
   // if ((InvalidLower < ptr ) && (ptr < InvalidUpper))
   //
-  // Invalid address range
-  //  InvalidUpper = 0xf0000000;
-  //  InvalidLower = 0xc0000000;
-  //
-  uintptr_t InvalidUpper = 0xf0000000;
-  uintptr_t InvalidLower = 0xc0000000;
-  Constant * InvalidLowerC = ConstantInt::get (V->getType(),
-                                               InvalidLower,
-                                               false);
-  Constant * InvalidUpperC = ConstantInt::get (V->getType(),
-                                               InvalidUpper,
-                                               false);
+  GlobalVariable *GVL = BB->getModule()->getGlobalVariable("_ZN8safecode12InvalidLowerE");
+  GlobalVariable *GVU = BB->getModule()->getGlobalVariable("_ZN8safecode12InvalidUpperE");
+  LoadInst *InvalidLowerC = new LoadInst(GVL, "il", BB);
+  LoadInst *InvalidUpperC = new LoadInst(GVU, "iu", BB);
 
   ICmpInst * Compare1 = new ICmpInst (*BB,
                                       CmpInst::ICMP_UGT,
@@ -748,6 +740,7 @@ insertIsPointerInBounds (Value *Source, Value *Dest,
 //
 bool
 llvm::InlineBBRuntimeFunctions::createGlobalDeclarations (Module & M) {
+  const DataLayout & TD = M.getDataLayout();
   GlobalVariable *GV = M.getGlobalVariable("__baggybounds_size_table_begin");
   if (!GV) {
     GV = new GlobalVariable(M,
@@ -756,6 +749,25 @@ llvm::InlineBBRuntimeFunctions::createGlobalDeclarations (Module & M) {
                             GlobalVariable::ExternalLinkage,
                             nullptr,
                             "__baggybounds_size_table_begin");
+  }
+  GlobalVariable *GVL = M.getGlobalVariable("_ZN8safecode12InvalidLowerE");
+  if (!GVL) {
+    GVL = new GlobalVariable(M,
+                             TD.getIntPtrType(getVoidPtrType(M)),
+                             true,
+                             GlobalVariable::ExternalLinkage,
+                             nullptr,
+                             "_ZN8safecode12InvalidLowerE");
+  }
+
+  GlobalVariable *GVU = M.getGlobalVariable("_ZN8safecode12InvalidUpperE");
+  if (!GVU) {
+    GVU = new GlobalVariable(M,
+                             TD.getIntPtrType(getVoidPtrType(M)),
+                             true,
+                             GlobalVariable::ExternalLinkage,
+                             nullptr,
+                             "_ZN8safecode12InvalidUpperE");
   }
   return true;
 }
