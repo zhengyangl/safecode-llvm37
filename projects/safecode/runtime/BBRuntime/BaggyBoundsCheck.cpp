@@ -412,6 +412,16 @@ __sc_bb_src_poolregister (DebugPoolTy *Pool,
   if (!allocaptr)
     return;
 
+  unsigned int adjusted_size = NumBytes+sizeof(BBMetaData);
+
+  unsigned int aligned_size ;
+  for (aligned_size = 1; aligned_size < adjusted_size; aligned_size = aligned_size << 1) ;
+  aligned_size = (aligned_size < 16 ? 16 : aligned_size);
+
+  BBMetaData *data = (BBMetaData*)((uintptr_t)allocaptr + aligned_size - sizeof(BBMetaData));
+  data->size = NumBytes;
+  data->pool = NULL;
+
   __internal_register(Pool,
                       allocaptr,
                       NumBytes + sizeof(BBMetaData),
