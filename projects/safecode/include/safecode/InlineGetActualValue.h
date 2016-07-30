@@ -43,6 +43,7 @@ class InlineGetActualValue : public ModulePass {
   }
  private:
   bool createGetActualValueBodyFor (Function *F);
+  bool createGlobalDeclarations (Module &M);
   bool inlineCheck (Function * F);
 };
 } // end namespace llvm;

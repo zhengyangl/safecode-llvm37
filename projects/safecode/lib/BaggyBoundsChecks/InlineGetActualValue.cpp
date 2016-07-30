@@ -147,14 +147,10 @@ llvm::InlineGetActualValue::createGetActualValueBodyFor (Function * F) {
   BasicBlock *NotPassRewrittenCheckBB = BasicBlock::Create (Context,
                                                             "not_pass_rewritten_check", F);
 
-  uintptr_t InvalidUpper = 0xf0000000;
-  uintptr_t InvalidLower = 0xc0000000;
-  Constant * InvalidLowerC = ConstantInt::get (PtrInt->getType(),
-                                               InvalidLower,
-                                               false);
-  Constant * InvalidUpperC = ConstantInt::get (PtrInt->getType(),
-                                               InvalidUpper,
-                                               false);
+  GlobalVariable *GVL = F->getParent()->getGlobalVariable("_ZN8safecode12InvalidLowerE");
+  GlobalVariable *GVU = F->getParent()->getGlobalVariable("_ZN8safecode12InvalidUpperE");
+  LoadInst *InvalidLowerC = new LoadInst(GVL, "il", EntryBB);
+  LoadInst *InvalidUpperC = new LoadInst(GVU, "iu", EntryBB);
 
   ICmpInst * Compare1 = new ICmpInst (*EntryBB,
                                       CmpInst::ICMP_UGT,
@@ -196,8 +192,44 @@ llvm::InlineGetActualValue::createGetActualValueBodyFor (Function * F) {
   return true;
 }
 
+//
+// Function: createGlobalDeclarations()
+//
+// Description:
+//  This function insert the declaration of baggy bounds size table pointer as a GlobalVariable
+//
+// Inputs:
+//  M - The module to be inserted
+//
+bool
+llvm::InlineGetActualValue::createGlobalDeclarations (Module & M) {
+  const DataLayout & TD = M.getDataLayout();
+  GlobalVariable *GVL = M.getGlobalVariable("_ZN8safecode12InvalidLowerE");
+  if (!GVL) {
+    GVL = new GlobalVariable(M,
+                             TD.getIntPtrType(getVoidPtrType(M)),
+                             true,
+                             GlobalVariable::ExternalLinkage,
+                             nullptr,
+                             "_ZN8safecode12InvalidLowerE");
+  }
+
+  GlobalVariable *GVU = M.getGlobalVariable("_ZN8safecode12InvalidUpperE");
+  if (!GVU) {
+    GVU = new GlobalVariable(M,
+                             TD.getIntPtrType(getVoidPtrType(M)),
+                             true,
+                             GlobalVariable::ExternalLinkage,
+                             nullptr,
+                             "_ZN8safecode12InvalidUpperE");
+  }
+  return true;
+}
+
+
 bool
 llvm::InlineGetActualValue::runOnModule (Module &M) {
+  createGlobalDeclarations(M);
   createGetActualValueBodyFor (M.getFunction("pchk_getActualValue"));
 
   inlineCheck (M.getFunction ("pchk_getActualValue"));
