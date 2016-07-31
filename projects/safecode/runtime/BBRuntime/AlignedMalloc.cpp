@@ -91,9 +91,7 @@ extern "C" char* __sc_bb_strdup(const char *ptr) {
   void *vp;
   posix_memalign(&vp, aligned_size, aligned_size);
   memcpy(vp, ptr, str_size);
-  BBMetaData *data = (BBMetaData*)((uintptr_t)vp + aligned_size - sizeof(BBMetaData));
-  data->size = str_size;
-  data->pool = NULL;
+  __sc_bb_poolregister (NULL, vp, str_size);
   return (char *)vp;
 }
 
@@ -103,9 +101,15 @@ extern "C" ssize_t __sc_bb_getline(char **lineptr, size_t *n, FILE *stream) {
   ssize_t read_len = getline(&output_str, &leng, stream);
   __sc_bb_poolunregister(NULL, *lineptr);
   free (*lineptr);
-  *lineptr = __sc_bb_strdup(output_str);
-  __sc_bb_poolregister (NULL, *lineptr, *n + 1);
-  *n = leng;
+
+  size_t str_size = read_len + 1;
+  size_t adjusted_size = str_size + sizeof(BBMetaData);
+  size_t aligned_size = next_pow_of_2(adjusted_size);
+  posix_memalign((void **) lineptr, aligned_size, aligned_size);
+  memcpy(*lineptr, output_str, str_size);
+
+  __sc_bb_poolregister (NULL, *lineptr, read_len + 1);
+  *n = read_len + 1;
   return read_len;
 }
 
@@ -115,8 +119,14 @@ extern "C" ssize_t __sc_bb_getdelim(char **lineptr, size_t *n, int delim, FILE *
   ssize_t read_len = getdelim(&output_str, &leng, delim, stream);
   __sc_bb_poolunregister(NULL, *lineptr);
   free (*lineptr);
-  *lineptr = __sc_bb_strdup(output_str);
-  __sc_bb_poolregister (NULL, *lineptr, *n + 1);
-  *n = leng;
+
+  size_t str_size = read_len + 1;
+  size_t adjusted_size = str_size + sizeof(BBMetaData);
+  size_t aligned_size = next_pow_of_2(adjusted_size);
+  posix_memalign((void **) lineptr, aligned_size, aligned_size);
+  memcpy(*lineptr, output_str, str_size);
+
+  __sc_bb_poolregister (NULL, *lineptr, read_len + 1);
+  *n = read_len + 1;
   return read_len;
 }
