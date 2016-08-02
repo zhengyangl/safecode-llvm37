@@ -870,6 +870,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
       
     Type* newType = *iter++;
     AllocaInst *AINew = new AllocaInst(newType, "", BB);
+    AINew->setAlignment(TD->getTypeAllocSize(newType));
     LoadInst *LINew = new LoadInst(I, "", BB);
     GetElementPtrInst *GEPNew = GetElementPtrInst::CreateInBounds(AINew,
                                                                   Idx,
