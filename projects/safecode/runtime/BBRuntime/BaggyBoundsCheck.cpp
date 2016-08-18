@@ -398,8 +398,6 @@ __sc_bb_src_poolregister (DebugPoolTy *Pool,
   //TODO: Fix massive hack. 
   // We have to manulally add the size of the allocation, since the size of
   // the allocation+metadata isn't threaded through the calls.
-  // Also, only heap allocations currently have this metadata, so it needs
-  // to be here instead of inside __internal_register.
   
   //
   // If the object has zero length, don't do anything.
@@ -416,7 +414,7 @@ __sc_bb_src_poolregister (DebugPoolTy *Pool,
 
   unsigned int aligned_size ;
   for (aligned_size = 1; aligned_size < adjusted_size; aligned_size = aligned_size << 1) ;
-  aligned_size = (aligned_size < 16 ? 16 : aligned_size);
+  aligned_size = (aligned_size < SLOTSIZE ? SLOTSIZE : aligned_size);
 
   BBMetaData *data = (BBMetaData*)((uintptr_t)allocaptr + aligned_size - sizeof(BBMetaData));
   data->size = NumBytes;
@@ -454,6 +452,17 @@ __sc_bb_src_poolregister_stack (DebugPoolTy *Pool,
   //
   if (!allocaptr)
     return;
+
+  unsigned int adjusted_size = NumBytes+sizeof(BBMetaData);
+
+  unsigned int aligned_size ;
+  for (aligned_size = 1; aligned_size < adjusted_size; aligned_size = aligned_size << 1) ;
+  aligned_size = (aligned_size < SLOTSIZE ? SLOTSIZE : aligned_size);
+
+  BBMetaData *data = (BBMetaData*)((uintptr_t)allocaptr + aligned_size - sizeof(BBMetaData));
+  data->size = NumBytes;
+  data->pool = NULL;
+
   
   __internal_register(Pool,
                       allocaptr,
