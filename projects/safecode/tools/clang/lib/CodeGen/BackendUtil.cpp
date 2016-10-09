@@ -527,12 +527,11 @@ void EmitAssemblyHelper::CreatePasses() {
     MPM->add (new RewriteHeapAllocations());
   }
 
+  MPM->add (new DebugInstrument());
   PMBuilder.populateModulePassManager(*MPM);
-
   // For SAFECode, do the debug instrumentation and OOB rewriting after
   // all optimization is done.
   if (CodeGenOpts.MemSafety) {
-    MPM->add (new DebugInstrument());
     MPM->add (new RewriteOOB());
     if (CodeGenOpts.BaggyBounds) {
       MPM->add (new InlineGetActualValue());
