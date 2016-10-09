@@ -533,10 +533,6 @@ void EmitAssemblyHelper::CreatePasses() {
   // all optimization is done.
   if (CodeGenOpts.MemSafety) {
     MPM->add (new RewriteOOB());
-    if (CodeGenOpts.BaggyBounds) {
-      MPM->add (new InlineGetActualValue());
-      MPM->add (new InlineBBRuntimeFunctions());
-    }
   }
 }
 
