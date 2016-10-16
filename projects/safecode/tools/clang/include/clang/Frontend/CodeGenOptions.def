@@ -140,6 +140,7 @@ CODEGENOPT(VectorizeSLP      , 1, 0) ///< Run SLP vectorizer.
 
 CODEGENOPT(MemSafety         , 1, 0) /// Instrument code with memory safety checks
 CODEGENOPT(BaggyBounds       , 1, 0) /// Use Baggy Bounds Checking
+CODEGENOPT(BaggyBoundsAccurateChecking, 1, 0) /// Use BBAC
 CODEGENOPT(MemSafeTerminate  , 1, 0) /// Terminate program on failed memsafe checks
 CODEGENOPT(SoftBound         , 1, 0) /// SoftBound+CETS pointer based checking
 

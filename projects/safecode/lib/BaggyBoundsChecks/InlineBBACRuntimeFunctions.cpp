@@ -1,4 +1,4 @@
-//===- InlineBBRuntimeFunctions.cpp - Inline BBAC RuntimeFunctions--------- --//
+//===- InlineBBACRuntimeFunctions.cpp - Inline BBAC RuntimeFunctions------- --//
 //
 //                          The SAFECode Compiler
 //
@@ -12,23 +12,23 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "inline_bb_runtime_functions"
+#define DEBUG_TYPE "inline_bbac_runtime_functions"
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
-#include "safecode/InlineBBRuntimeFunctions.h"
+#include "safecode/InlineBBACRuntimeFunctions.h"
 #include "safecode/Utility.h"
 #include "safecode/Runtime/BBMetaData.h"
 #include "llvm/Transforms/Utils/Cloning.h"
 
 namespace {
-STATISTIC (InlinedBBChecks, "Number of BBAC Runtime Functions Inlined");
+STATISTIC (InlinedBBACChecks, "Number of BBAC Runtime Functions Inlined");
 }
 
 namespace llvm {
-char InlineBBRuntimeFunctions::ID = 0;
+char InlineBBACRuntimeFunctions::ID = 0;
 }
 
 using namespace llvm;
@@ -48,7 +48,7 @@ using namespace llvm;
 //  false - No calls to the check were inlined.
 //
 bool
-llvm::InlineBBRuntimeFunctions::inlineCheck (Function * F) {
+llvm::InlineBBACRuntimeFunctions::inlineCheck (Function * F) {
   //
   // Get the runtime function in the code.  If no calls to the run-time
   // function were added to the code, do nothing.
@@ -91,7 +91,7 @@ llvm::InlineBBRuntimeFunctions::inlineCheck (Function * F) {
   InlineFunctionInfo IFI(&CG, AA, ACT);
   for (unsigned index = 0; index < CallsToInline.size(); ++index) {
     InlineFunction (CallsToInline[index], IFI);
-    ++ InlinedBBChecks;
+    ++ InlinedBBACChecks;
   }
 
   return modified;
@@ -320,7 +320,7 @@ insertIsSrcDstEqualCheck (Value *Src,
 }
 
 //
-// Function: insertGetBBLength()
+// Function: insertGetBBACLength()
 //
 // Description:
 //  This function insert instructions which looks up the baggy bounds size table, and extract
@@ -340,10 +340,10 @@ insertIsSrcDstEqualCheck (Value *Src,
 //  LCasted - Casted (i64) slot size of Ptr.
 //
 static Value *
-insertGetBBLength (Value *Ptr,
-                   BasicBlock *BB,
-                   BasicBlock *GoodBB,
-                   BasicBlock *NotPassBBLengthCheckBB) {
+insertGetBBACLength (Value *Ptr,
+                     BasicBlock *BB,
+                     BasicBlock *GoodBB,
+                     BasicBlock *NotPassBBLengthCheckBB) {
 
   //
   // Assert that the caller is giving us a casted integer value.
@@ -405,7 +405,7 @@ insertGetBBLength (Value *Ptr,
 }
 
 //
-// Function: insertGetBBRange()
+// Function: insertGetBBACRange()
 //
 // Description:
 //  This functions inserts instructions to calculate the lower and upper bounds of the input
@@ -421,7 +421,7 @@ insertGetBBLength (Value *Ptr,
 //  ObjEnd - The Upper bound
 //
 std::tuple<Value *, Value*>
-insertGetBBRange (Value *Ptr, Value *Length ,BasicBlock *BB) {
+insertGetBBACRange (Value *Ptr, Value *Length ,BasicBlock *BB) {
   //
   // Assert that the caller is giving us a casted integer value.
   //
@@ -579,8 +579,8 @@ insertBBPoolCheck (Value *Ptr,
   //
   // Get Memory Object Bounds from Baggy Bounds Size Table.
   //
-  Value * BBLength = insertGetBBLength (Ptr, BB, GoodBB, NotPassBBLengthCheckBB);
-  std::tuple<Value*, Value*> BBRange = insertGetBBRange(Ptr, BBLength, NotPassBBLengthCheckBB);
+  Value * BBLength = insertGetBBACLength (Ptr, BB, GoodBB, NotPassBBLengthCheckBB);
+  std::tuple<Value*, Value*> BBRange = insertGetBBACRange(Ptr, BBLength, NotPassBBLengthCheckBB);
   Value *ObjStart = std::get<0>(BBRange);
   Value *ObjEnd = std::get<1>(BBRange);
 
@@ -660,13 +660,13 @@ insertIsPointerInBounds (Value *Source, Value *Dest,
 
   Module *M = BB->getModule();
   BasicBlock * NotPassBBLengthCheckBB = BasicBlock::Create (M->getContext(),
-                                                            "not_pass_bb_length_check",
+                                                            "not_pass_bbac_length_check",
                                                             BB->getParent());
   // Get the Object BB Length from Baggy Bounds size table.
-  Value * BBLength = insertGetBBLength (Source, BB, GoodBB, NotPassBBLengthCheckBB);
+  Value * BBLength = insertGetBBACLength (Source, BB, GoodBB, NotPassBBLengthCheckBB);
 
   // Get the bounds with the input address Source and BB Length.
-  std::tuple<Value*, Value*> BBRange = insertGetBBRange(Source, BBLength, NotPassBBLengthCheckBB);
+  std::tuple<Value*, Value*> BBRange = insertGetBBACRange(Source, BBLength, NotPassBBLengthCheckBB);
   Value *ObjStart = std::get<0>(BBRange);
   Value *ObjEnd = std::get<1>(BBRange);
 
@@ -739,7 +739,7 @@ insertIsPointerInBounds (Value *Source, Value *Dest,
 //  M - The module to be inserted
 //
 bool
-llvm::InlineBBRuntimeFunctions::createGlobalDeclarations (Module & M) {
+llvm::InlineBBACRuntimeFunctions::createGlobalDeclarations (Module & M) {
   const DataLayout & TD = M.getDataLayout();
   GlobalVariable *GV = M.getGlobalVariable("__baggybounds_size_table_begin");
   if (!GV) {
@@ -782,7 +782,7 @@ llvm::InlineBBRuntimeFunctions::createGlobalDeclarations (Module & M) {
 //  F - The function to be implemented
 //
 bool
-llvm::InlineBBRuntimeFunctions::createPoolCheckUIBodyFor (Function * F) {
+llvm::InlineBBACRuntimeFunctions::createPoolCheckUIBodyFor (Function * F) {
   //
   // If the function does not exist, do nothing.
   //
@@ -850,7 +850,7 @@ llvm::InlineBBRuntimeFunctions::createPoolCheckUIBodyFor (Function * F) {
 //  F - The function to be implemented
 //
 bool
-llvm::InlineBBRuntimeFunctions::createBoundsCheckUIBodyFor (Function * F) {
+llvm::InlineBBACRuntimeFunctions::createBoundsCheckUIBodyFor (Function * F) {
   //
   // If the function does not exist, do nothing.
   //
@@ -929,7 +929,7 @@ llvm::InlineBBRuntimeFunctions::createBoundsCheckUIBodyFor (Function * F) {
 //  F - The function to be implemented
 //
 bool
-llvm::InlineBBRuntimeFunctions::createPoolRegisterBodyFor (Function * F) {
+llvm::InlineBBACRuntimeFunctions::createPoolRegisterBodyFor (Function * F) {
   //
   // If the function does not exist, do nothing.
   //
@@ -1025,7 +1025,7 @@ llvm::InlineBBRuntimeFunctions::createPoolRegisterBodyFor (Function * F) {
 //  F - The function to be implemented
 //
 bool
-llvm::InlineBBRuntimeFunctions::createPoolUnregisterBodyFor (Function * F) {
+llvm::InlineBBACRuntimeFunctions::createPoolUnregisterBodyFor (Function * F) {
 
   //
   // If the function does not exist, do nothing.
@@ -1099,7 +1099,7 @@ llvm::InlineBBRuntimeFunctions::createPoolUnregisterBodyFor (Function * F) {
 }
 
 bool
-llvm::InlineBBRuntimeFunctions::runOnModule (Module &M) {
+llvm::InlineBBACRuntimeFunctions::runOnModule (Module &M) {
   createGlobalDeclarations (M);
   createPoolCheckUIBodyFor (M.getFunction("poolcheckui_debug"));
   createBoundsCheckUIBodyFor (M.getFunction("boundscheckui_debug"));

@@ -1,4 +1,4 @@
-//===- InlineBBRuntimeFunctions.h - Inline BBAC RuntimeFunctions----------- --//
+//===- InlineBBACRuntimeFunctions.h - Inline BBAC RuntimeFunctions--------- --//
 //
 //                          The SAFECode Compiler
 //
@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef _INLINE_BB_RUNTIME_FUNCTIONS_H_
-#define _INLINE_BB_RUNTIME_FUNCTIONS_H_
+#ifndef _INLINE_BBAC_RUNTIME_FUNCTIONS_H_
+#define _INLINE_BBAC_RUNTIME_FUNCTIONS_H_
 
 #include "llvm/Pass.h"
 #include "llvm/Analysis/CallGraph.h"
@@ -23,13 +23,13 @@
 
 namespace llvm {
 
-class InlineBBRuntimeFunctions : public ModulePass {
+class InlineBBACRuntimeFunctions : public ModulePass {
  public:
   static char ID;
-  InlineBBRuntimeFunctions () : ModulePass(ID) {}
+  InlineBBACRuntimeFunctions () : ModulePass(ID) {}
   virtual bool runOnModule (Module &M);
   const char *getPassName() const {
-    return "Inline baggy bounds accurate checks runtime functions";
+    return "Inline baggy bounds accurate checks(BBAC) runtime functions";
   }
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
