@@ -485,8 +485,10 @@ BODIAGOBJ=$(PROJ_OBJ_ROOT)/test/bodiagsuite
 
 TESTSCRIPT=$(PROJ_OBJ_ROOT)/test/tools/test.sh
 
-# ulimit settings
-ULIMIT="ulimit -t 30 ; ulimit -d 512000 ; ulimit -m 512000 ; ulimit -v 1500000 ;"
+# ulimit settings for safecode+splaytree
+#ULIMIT="ulimit -t 30 ; ulimit -d 512000 ; ulimit -m 512000 ; ulimit -v 1500000 ;"
+# ulimit settings for safecode+baggybounds
+ULIMIT="ulimit -t 30 ; ulimit -d 512000 ; ulimit -m 512000 ; ulimit -v 15000000000 ;"
 
 # Run all lit tests
 lit: lit-core lit-formatstrings lit-cstdlib lit-regression lit-bodiagsuite
