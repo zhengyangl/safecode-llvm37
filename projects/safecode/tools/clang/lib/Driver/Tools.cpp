@@ -4086,6 +4086,10 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-bbac");
   }
 
+  if (Args.getLastArg(options::OPT_disable_rewrite_oob)) {
+    CmdArgs.push_back("-fmemsafety-disable-rewrite-oob");
+  }
+
   if (Args.getLastArg(options::OPT_bbc)) {
     CmdArgs.push_back("-bbc");
   }
@@ -6572,6 +6576,7 @@ void darwin::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       getToolChain().AddCXXStdlibLibArgs(Args, CmdArgs);
     }
   }
+  Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
 
   const char *Exec = Args.MakeArgString(getToolChain().GetLinkerPath());
   std::unique_ptr<Command> Cmd =
@@ -6941,6 +6946,7 @@ void openbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lgdtoa");
     CmdArgs.push_back("-lstdc++");
   }
+  Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nodefaultlibs)) {
@@ -7388,6 +7394,7 @@ void freebsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lgdtoa");
     CmdArgs.push_back("-lstdc++");
   }
+  Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nostartfiles)) {
@@ -7689,6 +7696,7 @@ void netbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lgdtoa");
     CmdArgs.push_back("-lstdc++");
   }
+  Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nostartfiles)) {
@@ -8229,6 +8237,7 @@ void gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lgdtoa");
     CmdArgs.push_back("-lstdc++");
   }
+  Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
 
   // The profile runtime also needs access to system libraries.
   addProfileRT(getToolChain(), Args, CmdArgs);
@@ -8559,6 +8568,7 @@ void minix::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lgdtoa");
     CmdArgs.push_back("-lstdc++");
   }
+  Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
 
   addProfileRT(getToolChain(), Args, CmdArgs);
 
@@ -8701,6 +8711,7 @@ void dragonfly::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lgdtoa");
     CmdArgs.push_back("-lstdc++");
   }
+  Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nodefaultlibs)) {

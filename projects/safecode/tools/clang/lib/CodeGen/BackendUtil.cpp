@@ -506,7 +506,8 @@ void EmitAssemblyHelper::CreatePasses() {
     MPM->add (createInstrumentMemoryAccessesPass());
     MPM->add (new ScalarEvolution());
     MPM->add (new ArrayBoundsCheckLocal());
-    MPM->add (new InsertGEPChecks());
+    if (!CodeGenOpts.DisableRewriteOOB)
+      MPM->add (new InsertGEPChecks());
     MPM->add (createSpecializeCMSCallsPass());
     MPM->add (createExactCheckOptPass());
 
@@ -533,7 +534,8 @@ void EmitAssemblyHelper::CreatePasses() {
   // For SAFECode, do the debug instrumentation and OOB rewriting after
   // all optimization is done.
   if (CodeGenOpts.MemSafety) {
-    MPM->add (new RewriteOOB());
+    if (!CodeGenOpts.DisableRewriteOOB)
+      MPM->add (new RewriteOOB());
     if (CodeGenOpts.BaggyBounds) {
       MPM->add (new InlineGetActualValue());
       if (CodeGenOpts.BaggyBoundsAccurateChecking) {
