@@ -64,6 +64,7 @@
 #include "safecode/PromoteArrayAllocas.h"
 #include "safecode/RewriteHeapAllocations.h"
 #include "safecode/InlineBBACRuntimeFunctions.h"
+#include "safecode/InlineBBCRuntimeFunctions.h"
 #include "safecode/InlineGetActualValue.h"
 #include "SoftBound/InitializeSoftBound.h"
 #include "SoftBound/SoftBoundCETSPass.h"
@@ -535,7 +536,11 @@ void EmitAssemblyHelper::CreatePasses() {
     MPM->add (new RewriteOOB());
     if (CodeGenOpts.BaggyBounds) {
       MPM->add (new InlineGetActualValue());
-      MPM->add (new InlineBBACRuntimeFunctions());
+      if (CodeGenOpts.BaggyBoundsAccurateChecking) {
+        MPM->add (new InlineBBACRuntimeFunctions());
+      } else if (CodeGenOpts.BaggyBoundsChecking) {
+        MPM->add (new InlineBBCRuntimeFunctions());
+      }
     }
   }
 }
