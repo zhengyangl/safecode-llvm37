@@ -87,8 +87,7 @@ template<bool xcompile> class TypeBuilder<BBMetaData, xcompile> {
 public:
   static  StructType* get(LLVMContext& context) {
     return StructType::get(
-      TypeBuilder<types::i<32>, xcompile>::get(context),
-      TypeBuilder<types::i<8>*, xcompile>::get(context),
+      TypeBuilder<types::i<64>, xcompile>::get(context),
       NULL);
    }
 };
@@ -199,11 +198,9 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
   //
   // Store the object's size into a metadata variable.
   //
-  Type *Int32Type = Type::getInt32Ty (GV->getContext());
-  Type *Int8Ptr = PointerType::get(Int8Type, 0);
-  std::vector<Constant *> metaVals(2);
-  metaVals[0] = ConstantInt::get(Int32Type, objectSize);
-  metaVals[1] = Constant::getNullValue(Int8Ptr);
+  Type *Int64Type = Type::getInt64Ty (GV->getContext());
+  std::vector<Constant *> metaVals(1);
+  metaVals[0] = ConstantInt::get(Int64Type, objectSize);
   Constant *c = ConstantStruct::get((StructType *)metadataType, metaVals);
   GlobalVariable *metaData = new GlobalVariable (*(GV->getParent()),
                                                  metadataType,
@@ -244,6 +241,7 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
   // Create a GEP expression that will represent the global value and replace
   // all uses of the global value with the new constant GEP.
   //
+  Type *Int32Type = Type::getInt32Ty (GV->getContext());
   Value *Zero = ConstantInt::getSigned(Int32Type, 0);
   Value *idx1[2] = {Zero, Zero};
   Constant *init = ConstantExpr::getGetElementPtr(newType, GV_new, idx1, 2);
@@ -283,6 +281,7 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   //
   Type *Int8Type = Type::getInt8Ty (AI->getContext());
   Type *Int32Type = Type::getInt32Ty (AI->getContext());
+  Type *Int64Type = Type::getInt64Ty (AI->getContext());
 
   //
   // Create a structure type.  The first element will be the global memory
@@ -319,7 +318,7 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   Value *Two = ConstantInt::getSigned(Int32Type, 2);
   Value *idx[3] = {Zero, Two, Zero};
   Value *V = GetElementPtrInst::Create(newType, AI_new, idx, Twine(""), AI);
-  new StoreInst(ConstantInt::get(Int32Type, objectSize), V, AI);
+  new StoreInst(ConstantInt::get(Int64Type, objectSize), V, AI);
 
   //
   // Create a GEP that accesses the first element of this new structure.

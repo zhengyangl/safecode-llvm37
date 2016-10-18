@@ -320,7 +320,6 @@ __sc_bb_poolargvregister(int argc, char **argv) {
   BBMetaData *data = (BBMetaData*)((uintptr_t)argv_temp + alignedSize - sizeof
                                    (BBMetaData));
   data->size = argv_size;
-  data->pool = NULL;
 
   //
   // Padding and align each argv string.
@@ -359,7 +358,6 @@ __sc_bb_poolargvregister(int argc, char **argv) {
     data = (BBMetaData*)((uintptr_t)argv_index_temp + alignedSize - sizeof
                         (BBMetaData));
     data->size = argv_index_size;
-    data->pool = NULL;
 
     //
     // Register each argv string.
@@ -418,7 +416,6 @@ __sc_bb_src_poolregister (DebugPoolTy *Pool,
 
   BBMetaData *data = (BBMetaData*)((uintptr_t)allocaptr + aligned_size - sizeof(BBMetaData));
   data->size = NumBytes;
-  data->pool = NULL;
 
   __internal_register(Pool,
                       allocaptr,
@@ -461,7 +458,6 @@ __sc_bb_src_poolregister_stack (DebugPoolTy *Pool,
 
   BBMetaData *data = (BBMetaData*)((uintptr_t)allocaptr + aligned_size - sizeof(BBMetaData));
   data->size = NumBytes;
-  data->pool = NULL;
 
   
   __internal_register(Pool,

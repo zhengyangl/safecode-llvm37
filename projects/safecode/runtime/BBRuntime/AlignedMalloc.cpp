@@ -32,7 +32,6 @@ extern "C" void* __sc_bb_malloc(size_t size) {
 
   BBMetaData *data = (BBMetaData*)((uintptr_t)vp + aligned_size - sizeof(BBMetaData));
   data->size = size;
-  data->pool = NULL;
   return vp;
 }
 
@@ -44,7 +43,6 @@ extern "C" void* __sc_bb_calloc(size_t nmemb, size_t size) {
   memset(vp, 0, aligned_size);
   BBMetaData *data = (BBMetaData*)((uintptr_t)vp + aligned_size - sizeof(BBMetaData));
   data->size = nmemb*size;
-  data->pool = NULL;
   return vp;
 }
 
@@ -61,7 +59,6 @@ extern "C" void* __sc_bb_realloc(void *ptr, size_t size) {
   free(ptr);
   BBMetaData *data = (BBMetaData*)((uintptr_t)vp + aligned_size - sizeof(BBMetaData));
   data->size = size;
-  data->pool = NULL;
   return vp;
 }
 
@@ -78,7 +75,6 @@ extern "C" char* __sc_bb_getenv(const char *ptr) {
   memcpy(vp, env, env_str_size);
   BBMetaData *data = (BBMetaData*)((uintptr_t)vp + aligned_size - sizeof(BBMetaData));
   data->size = env_str_size;
-  data->pool = NULL;
   return (char *)vp;
 }
 

@@ -2,8 +2,7 @@
 #define _BBMETADATA_H_
 
 struct BBMetaData {
-  unsigned int size;
-  void *pool;
+  uint64_t size;
 };
 
 #endif
