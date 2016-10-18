@@ -539,9 +539,16 @@ void EmitAssemblyHelper::CreatePasses() {
     if (CodeGenOpts.BaggyBounds) {
       MPM->add (new InlineGetActualValue());
       if (CodeGenOpts.BaggyBoundsAccurateChecking) {
-        MPM->add (new InlineBBACRuntimeFunctions());
+        if (CodeGenOpts.DisableRewriteOOB)
+          MPM->add (new InlineBBACRuntimeFunctions<true>());
+        else
+          MPM->add (new InlineBBACRuntimeFunctions<false>());
       } else if (CodeGenOpts.BaggyBoundsChecking) {
-        MPM->add (new InlineBBCRuntimeFunctions());
+        if (CodeGenOpts.DisableRewriteOOB)
+          MPM->add (new InlineBBCRuntimeFunctions<true>());
+        else
+          MPM->add (new InlineBBCRuntimeFunctions<false>());
+
       }
     }
   }

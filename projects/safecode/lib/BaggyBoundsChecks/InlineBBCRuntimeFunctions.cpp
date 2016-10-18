@@ -29,7 +29,9 @@ STATISTIC (InlinedBBCChecks, "Number of BBC Runtime Functions Inlined");
 }
 
 namespace llvm {
-char InlineBBCRuntimeFunctions::ID = 0;
+template <bool T> char InlineBBCRuntimeFunctions<T>::ID = 0;
+template class InlineBBCRuntimeFunctions<true>;
+template class InlineBBCRuntimeFunctions<false>;
 }
 
 using namespace llvm;
@@ -48,8 +50,9 @@ using namespace llvm;
 //  true  - One or more calls to the check were inlined.
 //  false - No calls to the check were inlined.
 //
+template <bool T>
 bool
-llvm::InlineBBCRuntimeFunctions::inlineCheck (Function * F) {
+llvm::InlineBBCRuntimeFunctions<T>::inlineCheck (Function * F) {
   //
   // Get the runtime function in the code.  If no calls to the run-time
   // function were added to the code, do nothing.
@@ -708,8 +711,10 @@ insertIsPointerInBounds (Value *Source, Value *Dest,
 // Inputs:
 //  M - The module to be inserted
 //
+template <bool isRewriteOOBDisabled>
 bool
-llvm::InlineBBCRuntimeFunctions::createGlobalDeclarations (Module & M) {
+llvm::InlineBBCRuntimeFunctions<isRewriteOOBDisabled>
+::createGlobalDeclarations (Module & M) {
   const DataLayout & TD = M.getDataLayout();
   GlobalVariable *GV = M.getGlobalVariable("__baggybounds_size_table_begin");
   if (!GV) {
@@ -720,6 +725,7 @@ llvm::InlineBBCRuntimeFunctions::createGlobalDeclarations (Module & M) {
                             nullptr,
                             "__baggybounds_size_table_begin");
   }
+  if (isRewriteOOBDisabled) return true;
   GlobalVariable *GVL = M.getGlobalVariable("_ZN8safecode12InvalidLowerE");
   if (!GVL) {
     GVL = new GlobalVariable(M,
@@ -751,8 +757,10 @@ llvm::InlineBBCRuntimeFunctions::createGlobalDeclarations (Module & M) {
 // Inputs:
 //  F - The function to be implemented
 //
+template <bool isRewriteOOBDisabled>
 bool
-llvm::InlineBBCRuntimeFunctions::createPoolCheckUIBodyFor (Function * F) {
+llvm::InlineBBCRuntimeFunctions<isRewriteOOBDisabled>::
+createPoolCheckUIBodyFor (Function * F) {
   //
   // If the function does not exist, do nothing.
   //
@@ -778,10 +786,6 @@ llvm::InlineBBCRuntimeFunctions::createPoolCheckUIBodyFor (Function * F) {
       BasicBlock::Create (Context,
                           "not_pass_zero_len_check", F);
 
-  BasicBlock *PassRewrittenCheckBB =
-      BasicBlock::Create (Context,
-                          "pass_rewritten_check", F);
-
   //
   // Add instructions to the entry block to compare the first dereferenced
   // address.
@@ -802,11 +806,15 @@ llvm::InlineBBCRuntimeFunctions::createPoolCheckUIBodyFor (Function * F) {
   BasicBlock *FaultBB = createEmitLSReportBlock (*F, Node, SourceFilep, Lineno);
 
   insertZeroCheck (Length, EntryBB, GoodBB, NotPassZeroLenCheckBB);
-  insertIsRewrittenPtr (Node,
-                        NotPassZeroLenCheckBB,
-                        PassRewrittenCheckBB,
-                        FaultBB);
-  insertBBPoolCheck(Node, Length, PassRewrittenCheckBB, GoodBB, FaultBB);
+  if (!isRewriteOOBDisabled) {
+    BasicBlock *PassRewrittenCheckBB = BasicBlock::Create (Context,
+                                                           "pass_rewritten_check", F);
+
+    insertIsRewrittenPtr (Node, NotPassZeroLenCheckBB, PassRewrittenCheckBB, FaultBB);
+    insertBBPoolCheck(Node, Length, PassRewrittenCheckBB, GoodBB, FaultBB);
+  } else
+    insertBBPoolCheck(Node, Length, NotPassZeroLenCheckBB, GoodBB, FaultBB);
+
 
   //
   // Make the function internal.
@@ -824,8 +832,9 @@ llvm::InlineBBCRuntimeFunctions::createPoolCheckUIBodyFor (Function * F) {
 // Inputs:
 //  F - The function to be implemented
 //
+template <bool T>
 bool
-llvm::InlineBBCRuntimeFunctions::createBoundsCheckUIBodyFor (Function * F) {
+llvm::InlineBBCRuntimeFunctions<T>::createBoundsCheckUIBodyFor (Function * F) {
   //
   // If the function does not exist, do nothing.
   //
@@ -909,8 +918,9 @@ llvm::InlineBBCRuntimeFunctions::createBoundsCheckUIBodyFor (Function * F) {
 // Inputs:
 //  F - The function to be implemented
 //
+template <bool T>
 bool
-llvm::InlineBBCRuntimeFunctions::createPoolRegisterBodyFor (Function * F) {
+llvm::InlineBBCRuntimeFunctions<T>::createPoolRegisterBodyFor (Function * F) {
   //
   // If the function does not exist, do nothing.
   //
@@ -1008,8 +1018,9 @@ llvm::InlineBBCRuntimeFunctions::createPoolRegisterBodyFor (Function * F) {
 // Inputs:
 //  F - The function to be implemented
 //
+template <bool T>
 bool
-llvm::InlineBBCRuntimeFunctions::createPoolUnregisterBodyFor (Function * F) {
+llvm::InlineBBCRuntimeFunctions<T>::createPoolUnregisterBodyFor (Function * F) {
 
   //
   // If the function does not exist, do nothing.
@@ -1083,8 +1094,9 @@ llvm::InlineBBCRuntimeFunctions::createPoolUnregisterBodyFor (Function * F) {
   return true;
 }
 
+template <bool T>
 bool
-llvm::InlineBBCRuntimeFunctions::runOnModule (Module &M) {
+llvm::InlineBBCRuntimeFunctions<T>::runOnModule (Module &M) {
   createGlobalDeclarations (M);
   createPoolCheckUIBodyFor (M.getFunction("poolcheckui_debug"));
   createBoundsCheckUIBodyFor (M.getFunction("boundscheckui_debug"));

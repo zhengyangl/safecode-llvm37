@@ -23,13 +23,17 @@
 
 namespace llvm {
 
+template<bool isRewriteOOBDisabled>
 class InlineBBACRuntimeFunctions : public ModulePass {
  public:
   static char ID;
   InlineBBACRuntimeFunctions () : ModulePass(ID) {}
   virtual bool runOnModule (Module &M);
   const char *getPassName() const {
-    return "Inline baggy bounds accurate checks(BBAC) runtime functions";
+    if (isRewriteOOBDisabled)
+      return "Inline baggy bounds accurate checks(BBAC) runtime functions with oob rewritting disabled";
+    else
+      return "Inline baggy bounds accurate checks(BBAC) runtime functions with oob rewritting enabled";
   }
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
