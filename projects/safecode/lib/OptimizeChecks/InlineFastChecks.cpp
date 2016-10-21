@@ -14,50 +14,13 @@
 
 #define DEBUG_TYPE "inline-fastchecks"
 
-#include "llvm/ADT/Statistic.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/Instruction.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Pass.h"
-#include "llvm/Transforms/Utils/Cloning.h"
-
+#include "safecode/InlineFastChecks.h"
 #include <vector>
 
 namespace {
   STATISTIC (Inlined, "Number of Fast Checks Inlined");
 }
 
-namespace llvm {
-  //
-  // Pass: InlineFastChecks
-  //
-  // Description:
-  //  This pass inlines fast checks to make them faster.
-  //
-  struct InlineFastChecks : public ModulePass {
-   public:
-    static char ID;
-    InlineFastChecks() : ModulePass(ID) {}
-     virtual bool runOnModule (Module & M);
-     const char *getPassName() const {
-       return "Inline fast checks transform";
-     }
-    
-     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-       return;
-     }
-
-   private:
-     // Private methods
-     bool inlineCheck (Function * F);
-     bool createBodyFor (Function * F);
-     bool createDebugBodyFor (Function * F);
-     Value * castToInt (Value * Pointer, BasicBlock * BB);
-     Value * addComparisons (BasicBlock *, Value *, Value *, Value *);
-  };
-}
 
 using namespace llvm;
 
@@ -264,8 +227,8 @@ llvm::InlineFastChecks::addComparisons (BasicBlock * BB,
   //
   const DataLayout & TD = BB->getModule()->getDataLayout();
   Value * SizeInt = Size;
-  if (SizeInt->getType() != TD.getIntPtrType(BB->getType())) {
-    SizeInt = new ZExtInst (Size, TD.getIntPtrType(BB->getType()), "size", BB);
+  if (SizeInt->getType() != TD.getIntPtrType(BB->getContext())) {
+    SizeInt = new ZExtInst (Size, TD.getIntPtrType(BB->getContext()), "size", BB);
   }
   Value * LastByte = BinaryOperator::Create (Instruction::Add,
                                              Base,
@@ -348,15 +311,15 @@ llvm::InlineFastChecks::createBodyFor (Function * F) {
   //
   const DataLayout & TD = F->getParent()->getDataLayout();
   Value * SizeInt = MemSize;
-  if (SizeInt->getType() != TD.getIntPtrType(entryBB->getType())) {
-    SizeInt = new ZExtInst (MemSize, TD.getIntPtrType(entryBB->getType()), "size", entryBB);
+  if (SizeInt->getType() != TD.getIntPtrType(entryBB->getContext())) {
+    SizeInt = new ZExtInst (MemSize, TD.getIntPtrType(entryBB->getContext()), "size", entryBB);
   }
   Value * LastByte = BinaryOperator::Create (Instruction::Add,
                                              Result,
                                              SizeInt,
                                              "lastbyte",
                                              entryBB);
-  Constant * MinusOne = ConstantInt::getSigned (TD.getIntPtrType(entryBB->getType()), -1);
+  Constant * MinusOne = ConstantInt::getSigned (TD.getIntPtrType(entryBB->getContext()), -1);
   LastByte = BinaryOperator::Create (Instruction::Add,
                                      LastByte,
                                      MinusOne,
@@ -443,15 +406,15 @@ llvm::InlineFastChecks::createDebugBodyFor (Function * F) {
   //
   const DataLayout & TD = F->getParent()->getDataLayout();
   Value * SizeInt = MemSize;
-  if (SizeInt->getType() != TD.getIntPtrType(entryBB->getType())) {
-    SizeInt = new ZExtInst (MemSize, TD.getIntPtrType(entryBB->getType()), "size", entryBB);
+  if (SizeInt->getType() != TD.getIntPtrType(entryBB->getContext())) {
+    SizeInt = new ZExtInst (MemSize, TD.getIntPtrType(entryBB->getContext()), "size", entryBB);
   }
   Value * LastByte = BinaryOperator::Create (Instruction::Add,
                                              Result,
                                              SizeInt,
                                              "lastbyte",
                                              entryBB);
-  Constant * MinusOne = ConstantInt::getSigned (TD.getIntPtrType(entryBB->getType()), -1);
+  Constant * MinusOne = ConstantInt::getSigned (TD.getIntPtrType(entryBB->getContext()), -1);
   LastByte = BinaryOperator::Create (Instruction::Add,
                                      LastByte,
                                      MinusOne,

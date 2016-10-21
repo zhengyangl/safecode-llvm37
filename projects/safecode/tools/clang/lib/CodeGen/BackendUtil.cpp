@@ -66,6 +66,7 @@
 #include "safecode/InlineBBACRuntimeFunctions.h"
 #include "safecode/InlineBBCRuntimeFunctions.h"
 #include "safecode/InlineGetActualValue.h"
+#include "safecode/InlineFastChecks.h"
 #include "SoftBound/InitializeSoftBound.h"
 #include "SoftBound/SoftBoundCETSPass.h"
 
@@ -534,6 +535,7 @@ void EmitAssemblyHelper::CreatePasses() {
   // For SAFECode, do the debug instrumentation and OOB rewriting after
   // all optimization is done.
   if (CodeGenOpts.MemSafety) {
+    MPM->add (new InlineFastChecks());
     if (!CodeGenOpts.DisableRewriteOOB)
       MPM->add (new RewriteOOB());
     if (CodeGenOpts.BaggyBounds) {

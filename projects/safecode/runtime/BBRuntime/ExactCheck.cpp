@@ -20,6 +20,7 @@
 #include "safecode/Config/config.h"
 #include "safecode/Runtime/BBRuntime.h"
 #include "safecode/Runtime/BBMetaData.h"
+#include "../include/CWE.h"
 
 #include <stdint.h>
 
@@ -31,10 +32,37 @@ extern unsigned SLOT_SIZE;
 
 using namespace NAMESPACE_SC;
 
-static void *
+extern "C" void *
 exactcheck_check (void *source, void * ObjStart, void * ObjEnd,
                   void * Dest, const char * SourceFile,
                   unsigned int lineno) __attribute__((noinline));
+
+extern "C" void
+failLSCheck (const char *base,
+             const char *result,
+             unsigned size,
+             const char * SourceFile,
+             unsigned int lineno) __attribute__((noinline));
+
+void
+failLSCheck (const char *base,
+             const char *result,
+             unsigned size,
+             const char * SourceFile,
+             unsigned int lineno) {
+  DebugViolationInfo v;
+  v.type = ViolationInfo::FAULT_LOAD_STORE,
+    v.faultPC = __builtin_return_address(0),
+    v.faultPtr = result,
+    v.CWE = CWEBufferOverflow,
+    v.PoolHandle = 0,
+    v.dbgMetaData = NULL,
+    v.SourceFile = SourceFile,
+    v.lineNo = lineno;
+
+  ReportMemoryViolation(&v);
+}
+
 /*
  * Function: exactcheck2()
  *
