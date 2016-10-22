@@ -681,6 +681,7 @@ static bool ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args, InputKind IK,
   Opts.BaggyBoundsAccurateChecking = Args.hasArg(OPT_bbac);
   Opts.BaggyBoundsChecking = Args.hasArg(OPT_bbc);
   Opts.DisableRewriteOOB = Args.hasArg(OPT_disable_rewrite_oob);
+  Opts.DisableInline = Args.hasArg(OPT_disable_inline);
   Opts.SoftBound = Args.hasArg(OPT_softbound);
   Opts.MemSafeTerminate = Args.hasArg(OPT_terminate);
   if (Arg *A = Args.getLastArg(OPT_msLogFile)) {

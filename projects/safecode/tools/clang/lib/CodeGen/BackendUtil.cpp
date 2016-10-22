@@ -535,22 +535,25 @@ void EmitAssemblyHelper::CreatePasses() {
   // For SAFECode, do the debug instrumentation and OOB rewriting after
   // all optimization is done.
   if (CodeGenOpts.MemSafety) {
-    MPM->add (new InlineFastChecks());
     if (!CodeGenOpts.DisableRewriteOOB)
       MPM->add (new RewriteOOB());
-    if (CodeGenOpts.BaggyBounds) {
-      MPM->add (new InlineGetActualValue());
-      if (CodeGenOpts.BaggyBoundsAccurateChecking) {
-        if (CodeGenOpts.DisableRewriteOOB)
-          MPM->add (new InlineBBACRuntimeFunctions<true>());
-        else
-          MPM->add (new InlineBBACRuntimeFunctions<false>());
-      } else if (CodeGenOpts.BaggyBoundsChecking) {
-        if (CodeGenOpts.DisableRewriteOOB)
-          MPM->add (new InlineBBCRuntimeFunctions<true>());
-        else
-          MPM->add (new InlineBBCRuntimeFunctions<false>());
 
+    if(!CodeGenOpts.DisableInline)
+    {
+      MPM->add (new InlineFastChecks());
+      if (CodeGenOpts.BaggyBounds) {
+        MPM->add (new InlineGetActualValue());
+        if (CodeGenOpts.BaggyBoundsAccurateChecking) {
+          if (CodeGenOpts.DisableRewriteOOB)
+            MPM->add (new InlineBBACRuntimeFunctions<true>());
+          else
+            MPM->add (new InlineBBACRuntimeFunctions<false>());
+        } else if (CodeGenOpts.BaggyBoundsChecking) {
+          if (CodeGenOpts.DisableRewriteOOB)
+            MPM->add (new InlineBBCRuntimeFunctions<true>());
+          else
+            MPM->add (new InlineBBCRuntimeFunctions<false>());
+        }
       }
     }
   }

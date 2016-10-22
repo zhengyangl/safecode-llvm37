@@ -663,6 +663,8 @@ def bbac : Flag<["-"], "bbac">,
   HelpText<"Use Baggy Bounds Accurate Checking">;
 def bbc : Flag<["-"], "bbc">,
   HelpText<"Use Baggy Bounds Checking">;
+def disable_inline : Flag<["-"], "fmemsafety-disable-inline">,
+  HelpText<"Disable inline optimizations">;
 def disable_rewrite_oob : Flag<["-"], "fmemsafety-disable-rewrite-oob">,
   HelpText<"Disable rewrite OOB.">;
 def msLogFile : Separate<["-"], "fmemsafety-logfile">,

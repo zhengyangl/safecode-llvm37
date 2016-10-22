@@ -4090,6 +4090,10 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-fmemsafety-disable-rewrite-oob");
   }
 
+  if (Args.getLastArg(options::OPT_disable_inline)) {
+    CmdArgs.push_back("-fmemsafety-disable-inline");
+  }
+
   if (Args.getLastArg(options::OPT_bbc)) {
     CmdArgs.push_back("-bbc");
   }
@@ -6947,6 +6951,7 @@ void openbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
+  Args.ClaimAllArgs (options::OPT_disable_inline);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nodefaultlibs)) {
@@ -7395,6 +7400,7 @@ void freebsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
+  Args.ClaimAllArgs (options::OPT_disable_inline);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nostartfiles)) {
@@ -7697,6 +7703,7 @@ void netbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
+  Args.ClaimAllArgs (options::OPT_disable_inline);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nostartfiles)) {
@@ -8238,6 +8245,7 @@ void gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
+  Args.ClaimAllArgs (options::OPT_disable_inline);
 
   // The profile runtime also needs access to system libraries.
   addProfileRT(getToolChain(), Args, CmdArgs);
@@ -8569,6 +8577,7 @@ void minix::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
+  Args.ClaimAllArgs (options::OPT_disable_inline);
 
   addProfileRT(getToolChain(), Args, CmdArgs);
 
@@ -8712,6 +8721,7 @@ void dragonfly::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
+  Args.ClaimAllArgs (options::OPT_disable_inline);
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
       !Args.hasArg(options::OPT_nodefaultlibs)) {
