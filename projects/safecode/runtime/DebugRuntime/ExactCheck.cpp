@@ -36,7 +36,8 @@ exactcheck_check (void * Source, void * ObjStart, void * ObjEnd,
                   const void * Dest, const char * SourceFile,
                   unsigned int lineno) __attribute__((noinline));
 
-static void
+extern "C"
+void
 failLSCheck (const char *base,
              const char *result,
              unsigned size,
