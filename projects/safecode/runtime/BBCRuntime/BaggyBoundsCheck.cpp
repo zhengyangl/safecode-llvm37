@@ -49,8 +49,6 @@
 
 #include <stdio.h>
 
-#include "safecode/Runtime/BBMetaData.h"
-
 #define TAG unsigned tag
 
 #define DEBUG(x)
@@ -81,7 +79,7 @@ unsigned SLOTSIZE = 16;
 unsigned WORD_SIZE = 64;
 unsigned char * __baggybounds_size_table_begin;
 #if defined(_LP64)
-const size_t table_size = 1L<<43;
+const size_t table_size = 1L<<44;
 #else
 const size_t table_size = 1L<<28;
 #endif
@@ -293,7 +291,7 @@ __sc_bb_poolargvregister(int argc, char **argv) {
   //
   unsigned int size = 0;
   unsigned int argv_size = sizeof(char *) * (argc+1);
-  unsigned int argv_adjustedsize = argv_size + sizeof(BBMetaData);
+  unsigned int argv_adjustedsize = argv_size;
   
   //
   // Align the size of argv variable to be a power of 2.
@@ -317,10 +315,6 @@ __sc_bb_poolargvregister(int argc, char **argv) {
   //
   // Initialize the metadata of argv variable.
   //
-  BBMetaData *data = (BBMetaData*)((uintptr_t)argv_temp + alignedSize - sizeof
-                                   (BBMetaData));
-  data->size = argv_size;
-
   //
   // Padding and align each argv string.
   //
@@ -330,7 +324,7 @@ __sc_bb_poolargvregister(int argc, char **argv) {
     //
     size = 0;
     unsigned int argv_index_size = (strlen(argv[index])+ 1)*sizeof(char);
-    unsigned int adjustedSize = argv_index_size + sizeof(BBMetaData);
+    unsigned int adjustedSize = argv_index_size;
    
     //
     // Align the size of each argv string to be a power of 2.
@@ -354,10 +348,6 @@ __sc_bb_poolargvregister(int argc, char **argv) {
 
     //
     // Initialize the metadata of each argv string.
-    //
-    data = (BBMetaData*)((uintptr_t)argv_index_temp + alignedSize - sizeof
-                        (BBMetaData));
-    data->size = argv_index_size;
 
     //
     // Register each argv string.
@@ -408,18 +398,15 @@ __sc_bb_src_poolregister (DebugPoolTy *Pool,
   if (!allocaptr)
     return;
 
-  unsigned int adjusted_size = NumBytes+sizeof(BBMetaData);
+  unsigned int adjusted_size = NumBytes;
 
   unsigned int aligned_size ;
   for (aligned_size = 1; aligned_size < adjusted_size; aligned_size = aligned_size << 1) ;
   aligned_size = (aligned_size < SLOTSIZE ? SLOTSIZE : aligned_size);
 
-  BBMetaData *data = (BBMetaData*)((uintptr_t)allocaptr + aligned_size - sizeof(BBMetaData));
-  data->size = NumBytes;
-
   __internal_register(Pool,
                       allocaptr,
-                      NumBytes + sizeof(BBMetaData),
+                      NumBytes,
                       tag,
                       SourceFilep,
                       lineno);
@@ -450,19 +437,15 @@ __sc_bb_src_poolregister_stack (DebugPoolTy *Pool,
   if (!allocaptr)
     return;
 
-  unsigned int adjusted_size = NumBytes+sizeof(BBMetaData);
+  unsigned int adjusted_size = NumBytes;
 
   unsigned int aligned_size ;
   for (aligned_size = 1; aligned_size < adjusted_size; aligned_size = aligned_size << 1) ;
   aligned_size = (aligned_size < SLOTSIZE ? SLOTSIZE : aligned_size);
 
-  BBMetaData *data = (BBMetaData*)((uintptr_t)allocaptr + aligned_size - sizeof(BBMetaData));
-  data->size = NumBytes;
-
-  
   __internal_register(Pool,
                       allocaptr,
-                      NumBytes + sizeof(BBMetaData),
+                      NumBytes,
                       tag,
                       SourceFilep,
                       lineno);
@@ -526,7 +509,7 @@ __sc_bb_src_poolregister_global_debug (DebugPoolTy *Pool,
 
   __internal_register(Pool,
                       allocaptr,
-                      NumBytes + sizeof(BBMetaData),
+                      NumBytes,
                       tag,
                       SourceFilep,
                       lineno);

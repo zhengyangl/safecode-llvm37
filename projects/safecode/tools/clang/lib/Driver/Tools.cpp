@@ -6567,8 +6567,10 @@ void darwin::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   if (Args.hasArg(options::OPT_memsafety)) {
-    if (Args.hasArg(options::OPT_bbac) || Args.hasArg(options::OPT_bbc)) {
-      CmdArgs.push_back("-lsc_bb_rt");
+    if (Args.hasArg(options::OPT_bbac)) {
+      CmdArgs.push_back("-lsc_bbac_rt");
+    } else if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bbc_rt");
     } else {
       CmdArgs.push_back("-lsc_dbg_rt");
       CmdArgs.push_back("-lpoolalloc_bitmap");
@@ -6941,8 +6943,10 @@ void openbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   if (Args.hasArg(options::OPT_memsafety)) {
-    if (Args.hasArg(options::OPT_bbac) || Args.hasArg(options::OPT_bbc)) {
-      CmdArgs.push_back("-lsc_bb_rt");
+    if (Args.hasArg(options::OPT_bbac)) {
+      CmdArgs.push_back("-lsc_bbac_rt");
+    } else if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bbc_rt");
     } else {
       CmdArgs.push_back("-lsc_dbg_rt");
       CmdArgs.push_back("-lpoolalloc_bitmap");
@@ -7390,8 +7394,10 @@ void freebsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   if (Args.hasArg(options::OPT_memsafety)) {
-    if (Args.hasArg(options::OPT_bbac) || Args.hasArg(options::OPT_bbc)) {
-      CmdArgs.push_back("-lsc_bb_rt");
+    if (Args.hasArg(options::OPT_bbac)) {
+      CmdArgs.push_back("-lsc_bbac_rt");
+    } else if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bbc_rt");
     } else {
       CmdArgs.push_back("-lsc_dbg_rt");
       CmdArgs.push_back("-lpoolalloc_bitmap");
@@ -7693,8 +7699,10 @@ void netbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   if (Args.hasArg(options::OPT_memsafety)) {
-    if (Args.hasArg(options::OPT_bbac) || Args.hasArg(options::OPT_bbc)) {
-      CmdArgs.push_back("-lsc_bb_rt");
+    if (Args.hasArg(options::OPT_bbac)) {
+      CmdArgs.push_back("-lsc_bbac_rt"); 
+    } else if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bbc_rt");
     } else {
       CmdArgs.push_back("-lsc_dbg_rt");
       CmdArgs.push_back("-lpoolalloc_bitmap");
@@ -8235,8 +8243,10 @@ void gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   if (Args.hasArg(options::OPT_memsafety)) {
-    if (Args.hasArg(options::OPT_bbac) || Args.hasArg(options::OPT_bbc)) {
-      CmdArgs.push_back("-lsc_bb_rt");
+    if (Args.hasArg(options::OPT_bbac)) {
+      CmdArgs.push_back("-lsc_bbac_rt");
+    } else if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bbc_rt");
     } else {
       CmdArgs.push_back("-lsc_dbg_rt");
       CmdArgs.push_back("-lpoolalloc_bitmap");
@@ -8567,8 +8577,10 @@ void minix::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   if (Args.hasArg(options::OPT_memsafety)) {
-    if (Args.hasArg(options::OPT_bbac) || Args.hasArg(options::OPT_bbc)) {
-      CmdArgs.push_back("-lsc_bb_rt");
+    if (Args.hasArg(options::OPT_bbac)) {
+      CmdArgs.push_back("-lsc_bbac_rt");
+    } else if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bbc_rt");
     } else {
       CmdArgs.push_back("-lsc_dbg_rt");
       CmdArgs.push_back("-lpoolalloc_bitmap");
@@ -8711,8 +8723,10 @@ void dragonfly::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lstdc++");
   }
   if (Args.hasArg(options::OPT_memsafety)) {
-    if (Args.hasArg(options::OPT_bbac) || Args.hasArg(options::OPT_bbc)) {
-      CmdArgs.push_back("-lsc_bb_rt");
+    if (Args.hasArg(options::OPT_bbac)) {
+      CmdArgs.push_back("-lsc_bbac_rt");
+    } else if (Args.hasArg(options::OPT_bbc)) {
+      CmdArgs.push_back("-lsc_bbc_rt");
     } else {
       CmdArgs.push_back("-lsc_dbg_rt");
       CmdArgs.push_back("-lpoolalloc_bitmap");
