@@ -76,6 +76,12 @@ FILE * ReportLog;
 // signal handler
 static void bus_error_handler(int, siginfo_t *, void *);
 
+#define SC_OBJ_COUNT
+
+#ifdef SC_OBJ_COUNT
+unsigned __sc_obj_count = 0;
+#endif
+
 unsigned SLOT_SIZE = 4;
 unsigned SLOTSIZE = 16;
 unsigned WORD_SIZE = 64;
@@ -246,6 +252,10 @@ __internal_register(DebugPoolTy *Pool,
                     TAG,
                     const char* SourceFilep,
                     unsigned lineno) {
+#ifdef SC_OBJ_COUNT
+  ++ __sc_obj_count;
+#endif
+
   uintptr_t Source = (uintptr_t)allocaptr;
   unsigned char size= 0;
   //
