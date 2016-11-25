@@ -496,21 +496,21 @@ void EmitAssemblyHelper::CreatePasses() {
       MPM->add (new RegisterGlobalVariables<true>);
 
     MPM->add (new RegisterMainArgs());
-    MPM->add (new InsertFreeChecks());
-    MPM->add (new RegisterCustomizedAllocation());
-    MPM->add (new RegisterFunctionByvalArguments ());
+    MPM->add (new InsertFreeChecks()); // boundscheck
+    MPM->add (new RegisterCustomizedAllocation()); //register
+    MPM->add (new RegisterFunctionByvalArguments ()); //register
     MPM->add (new LoopInfoWrapperPass ());
     MPM->add (new DominatorTreeWrapperPass ());
     MPM->add (new DominanceFrontier ());
-    MPM->add (new RegisterStackObjPass ());
-    MPM->add (new RegisterRuntimeInitializer(CodeGenOpts.MemSafetyLogFile.c_str()));
+    MPM->add (new RegisterStackObjPass ()); // register
+    MPM->add (new RegisterRuntimeInitializer(CodeGenOpts.MemSafetyLogFile.c_str())); //register
     MPM->add (new DebugInstrument());
-    MPM->add (createInstrumentMemoryAccessesPass());
+    MPM->add (createInstrumentMemoryAccessesPass()); // access + check
     MPM->add (new ScalarEvolution());
     MPM->add (new ArrayBoundsCheckLocal());
     if (!CodeGenOpts.DisableRewriteOOB)
-      MPM->add (new InsertGEPChecks());
-    MPM->add (createSpecializeCMSCallsPass());
+      MPM->add (new InsertGEPChecks()); // access + check
+    MPM->add (createSpecializeCMSCallsPass()); //access + cehck
     MPM->add (createExactCheckOptPass());
 
     MPM->add (new DominatorTreeWrapperPass());
