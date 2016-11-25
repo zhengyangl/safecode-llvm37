@@ -449,14 +449,15 @@ void EmitAssemblyHelper::CreatePasses() {
     Options.InstrProfileOutput = CodeGenOpts.InstrProfileOutput;
     MPM->add(createInstrProfilingPass(Options));
   }
-
-  // Add the memory safety passes for control-flow integrity
+  /*
+ // Add the memory safety passes for control-flow integrity
   if (CodeGenOpts.MemSafety) {
     // Make sure everything that can be in an LLVM register is.
     MPM->add (createPromoteMemoryToRegisterPass());
     MPM->add (createUnifyFunctionExitNodesPass());
     MPM->add (new CFIChecks());
-  }
+    }
+  */
 
   PMBuilder.populateModulePassManager(*MPM);
 
@@ -486,7 +487,7 @@ void EmitAssemblyHelper::CreatePasses() {
       MPM->add (new LoggingFunctions());
     }
 
-    MPM->add (new InitAllocas());
+    // MPM->add (new InitAllocas());
 
     // Do not register external global variable in bbac
     if(CodeGenOpts.BaggyBounds)
