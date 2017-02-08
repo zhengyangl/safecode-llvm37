@@ -485,12 +485,10 @@ insertGetBBACRange (Value *Ptr, Value *Length ,BasicBlock *BB) {
   // Define the data structure of BBMetaData
   //  struct BBMetaData {
   //    unsigned int size;
-  //    void *pool;
   //  };
   //
   std::vector<Type *> BBMetaDataFields;
-  BBMetaDataFields.push_back(Type::getInt32Ty(M->getContext()));
-  BBMetaDataFields.push_back(Type::getInt8PtrTy(M->getContext()));
+  BBMetaDataFields.push_back(Type::getInt64Ty(M->getContext()));
   StructType *BBMetaDataTy;
   BBMetaDataTy = StructType::create(M->getContext(),
                                     BBMetaDataFields,
@@ -546,6 +544,403 @@ insertGetBBACRange (Value *Ptr, Value *Length ,BasicBlock *BB) {
 
   return std::make_tuple<Value*, Value*> (BObjStart, BObjEnd);
 }
+
+
+//
+// Function: insertFindBinaryLogarithm ()
+//
+Value *
+insertFindBinaryLogarithm (Value *Val, BasicBlock* ResultBB, BasicBlock *BB) {
+  assert (isa<IntegerType>(Val->getType()));
+
+  Module *M = BB->getModule();
+  BasicBlock * BBCond = BasicBlock::Create (M->getContext(),
+                                            "cond",
+                                            BB->getParent());
+  BasicBlock * BBLoop = BasicBlock::Create (M->getContext(),
+                                            "loop",
+                                            BB->getParent());
+
+  AllocaInst * ACnt = new AllocaInst (Val->getType(), "cnt", BB);
+  new StoreInst (ConstantInt::get (Val->getType(),
+                                   0,
+                                   false), ACnt, BB);
+  BranchInst::Create(BBCond,BB);
+
+  LoadInst * LCnt = new LoadInst(ACnt,"lcnt", BBCond);
+  BinaryOperator *BShlOne;
+  BShlOne = BinaryOperator::Create (Instruction::Shl,
+                                    ConstantInt::get (Val->getType(),1, false),
+                                    LCnt,
+                                    "shr_one",
+                                    BBCond);
+
+  ICmpInst * ILT = new ICmpInst (*BBCond,
+                                 CmpInst::ICMP_ULT,
+                                 BShlOne,
+                                 Val,
+                                 "cond");
+
+  BranchInst::Create(BBLoop, ResultBB, ILT ,BBCond);
+
+  LoadInst * LCnt2 = new LoadInst(ACnt,"lcnt", BBLoop);
+
+  BinaryOperator *BCnt2AddOne;
+  BCnt2AddOne = BinaryOperator::Create (Instruction::Add,
+                                       LCnt2,
+                                       ConstantInt::get (Val->getType(),1, false),
+                                       "lcnt_add_one",
+                                       BBLoop);
+  new StoreInst (BCnt2AddOne, ACnt, BBLoop);
+  BranchInst::Create(BBCond, BBLoop);
+
+  LoadInst * LResult = new LoadInst(ACnt, "result", ResultBB);
+
+  return LResult;
+}
+
+//
+// Function: insertInternalRegister ()
+//
+// Description:
+//  This functions inserts instructions to calculate the lower and upper bounds of the input
+//  Ptr and Length. All the instructions are inserted to BB.
+//
+// Inputs:
+//  Ptr - The base pointer used in the bounds calculation
+//  Length - The slot size of Ptr used in the bounds calculation
+//  BB - The basic block to be inserted
+//
+// Outputs:
+//  ObjStart - The lower bound
+//  ObjEnd - The Upper bound
+//
+BasicBlock *
+insertInternalRegister (Value *Ptr, Value *Length ,
+                        BasicBlock *BB) {
+  //
+  // Assert that the caller is giving us a casted integer value.
+  //
+  assert (isa<IntegerType>(Ptr->getType()));
+  assert (isa<IntegerType>(Length->getType()));
+
+  Module *M = BB->getModule();
+  BinaryOperator *BAdjSize;
+  BAdjSize =
+      BinaryOperator::Create (Instruction::Add,
+                              ConstantInt::get (Ptr->getType(),
+                                                sizeof(BBMetaData),
+                                                false),
+                              Length,
+                              "adj_size",
+                              BB);
+
+  BasicBlock * BBAfterFindLog =
+      BasicBlock::Create (M->getContext(),
+                          "after_find_log",
+                          BB->getParent());
+
+  Value *BBinaryLog = insertFindBinaryLogarithm (BAdjSize,
+                                                  BBAfterFindLog,
+                                                  BB);
+
+  ICmpInst * ILessThanSlotSize =
+      new ICmpInst (*BBAfterFindLog,
+                    CmpInst::ICMP_ULT,
+                    BBinaryLog,
+                    ConstantInt::get (Length->getType(),
+                                      4,
+                                      false),
+                    "less_than_slotsize");
+
+  SelectInst *SAllocSize =
+      SelectInst::Create (ILessThanSlotSize,
+                          ConstantInt::get (Length->getType(),
+                                            4,
+                                            false),
+                          BBinaryLog,
+                          "size", BBAfterFindLog);
+
+  BinaryOperator *BShlOne;
+  BShlOne = BinaryOperator::Create (Instruction::Shl,
+                                    ConstantInt::get (Length->getType(),1, false),
+                                    SAllocSize,
+                                    "shl_one",
+                                    BBAfterFindLog);
+
+  BinaryOperator *BSubOne;
+  BSubOne = BinaryOperator::Create (Instruction::Sub,
+                                    BShlOne,
+                                    ConstantInt::get (BShlOne->getType(),1, false),
+                                    "sub_one",
+                                    BBAfterFindLog);
+  BinaryOperator *BInv;
+  BInv = BinaryOperator::Create (Instruction::Xor,
+                                 BSubOne,
+                                 ConstantInt::get (BSubOne->getType(), -1, false),
+                                 "inv",
+                                 BBAfterFindLog);
+  BinaryOperator *BObjStart;
+  BObjStart = BinaryOperator::Create (Instruction::And,
+                                      Ptr,
+                                      BInv,
+                                      "obj_start",
+                                      BBAfterFindLog);
+
+  BinaryOperator *BSlotEnd;
+  BSlotEnd = BinaryOperator::Create (Instruction::Add,
+                                     BShlOne,
+                                     BObjStart,
+                                     "slot_end",
+                                     BBAfterFindLog);
+
+  BinaryOperator *BMetaData;
+  BMetaData = BinaryOperator::Create (Instruction::Sub,
+                                      BSlotEnd,
+                                      ConstantInt::get(BSlotEnd->getType(),
+                                                       sizeof(BBMetaData), false),
+                                      "metadata",
+                                      BBAfterFindLog);
+
+  //
+  // Define the data structure of BBMetaData
+  //  struct BBMetaData {
+  //    unsigned size;
+  //  };
+  //
+  std::vector<Type *> BBMetaDataFields;
+  BBMetaDataFields.push_back(Type::getInt64Ty(M->getContext()));
+  StructType *BBMetaDataTy;
+  BBMetaDataTy = StructType::create(M->getContext(),
+                                    BBMetaDataFields,
+                                    "BBMetaData");
+  PointerType * BBMetaDataPtrTy = PointerType::get(BBMetaDataTy, 0);
+
+
+  std::vector<Value *> ArefMD;
+  ArefMD.push_back (ConstantInt::get(Type::getInt32Ty(M->getContext()),0, false));
+  ArefMD.push_back (ConstantInt::get(Type::getInt32Ty(M->getContext()),0, false));
+
+  //
+  // Dereference the size field of BBMetaData
+  //  BBMetaData *data = (BBMetaData*)(ObjStart + (1<<e) - sizeof(BBMetaData));
+  //
+  Instruction * MetaDataIntPtr = new IntToPtrInst(BMetaData,
+                                                  Type::getInt8PtrTy(M->getContext()),
+                                                  "metadata_iptr",
+                                                  BBAfterFindLog);
+  BitCastInst * MetaDataPtr = new BitCastInst (MetaDataIntPtr,
+                                               BBMetaDataPtrTy,
+                                               "metadata_ptr",
+                                               BBAfterFindLog);
+
+  //
+  // Get the upper bound
+  //  uintptr_t ObjEnd = ObjStart + data->size - 1;
+  //
+  GetElementPtrInst *ObjSizePtr = GetElementPtrInst::CreateInBounds (BBMetaDataTy,
+                                                                     MetaDataPtr,
+                                                                     ArefMD,
+                                                                     "obj_size_ptr",
+                                                                     BBAfterFindLog);
+  new StoreInst (Length,
+                 ObjSizePtr,
+                 BBAfterFindLog);
+
+  BinaryOperator *BIndex;
+  BIndex = BinaryOperator::Create (Instruction::LShr,
+                                   BObjStart,
+                                   ConstantInt::get (BObjStart->getType(), 4, false),
+                                   "index",
+                                   BBAfterFindLog);
+  BinaryOperator *BFixedSize;
+  BFixedSize = BinaryOperator::Create (Instruction::Sub,
+                                       SAllocSize,
+                                       ConstantInt::get (SAllocSize->getType(), 4, false),
+                                       "fixedsize",
+                                       BBAfterFindLog);
+
+  BinaryOperator *BRange;
+  BRange = BinaryOperator::Create (Instruction::Shl,
+                                   ConstantInt::get (SAllocSize->getType(), 1, false),
+                                   BFixedSize,
+                                   "range",
+                                   BBAfterFindLog);
+
+  GlobalVariable *GV = M->getGlobalVariable("__baggybounds_size_table_begin");
+  LoadInst *TBL = new LoadInst(GV, "tbl", BBAfterFindLog);
+
+  // Get the pointer to the actual slot size.
+  ArrayRef<Value *> ARefTableBase (BIndex);
+  GetElementPtrInst *GEPI = GetElementPtrInst::Create (Type::getInt8Ty(M->getContext()),
+                                                       TBL,
+                                                       ARefTableBase,
+                                                       "index",
+                                                       BBAfterFindLog);
+
+  Function * Memset = cast<Function>(M->getFunction ("llvm.memset.p0i8.i32"));
+  std::vector<Value *> args;
+
+  CastInst *CAllocSize =
+      CastInst::CreateIntegerCast (SAllocSize,
+                                   Type::getInt8Ty(M->getContext()),
+                                   false,
+                                   "casted", BBAfterFindLog);
+  CastInst *CRange =
+      CastInst::CreateIntegerCast (BRange,
+                                   Type::getInt32Ty(M->getContext()),
+                                   false,
+                                   "casted", BBAfterFindLog);
+
+  const DataLayout & TD = M->getDataLayout();
+  args.push_back (GEPI);
+  args.push_back (CAllocSize);
+  args.push_back (CRange);
+  args.push_back (ConstantInt::get(Type::getInt32Ty(M->getContext()),
+                                   TD.getABITypeAlignment(
+                                       Type::getInt8Ty(M->getContext()))));
+  args.push_back (ConstantInt::get(Type::getInt1Ty(M->getContext()), 0));
+  CallInst::Create (Memset, args, "", BBAfterFindLog);
+
+  return BBAfterFindLog;
+}
+
+BasicBlock *
+insertInternalUnregister (Value *Ptr ,
+                          BasicBlock *GoodBB,
+                          BasicBlock *BB) {
+  //
+  // Assert that the caller is giving us a casted integer value.
+  //
+  assert (isa<IntegerType>(Ptr->getType()));
+
+  Module *M = BB->getModule();
+
+  BasicBlock * BBElementNotZero =
+      BasicBlock::Create (M->getContext(),
+                          "metatable_element_not_zero",
+                          BB->getParent());
+
+  BinaryOperator *BIndex;
+  BIndex = BinaryOperator::Create (Instruction::LShr,
+                                   Ptr,
+                                   ConstantInt::get (Ptr->getType(),4, false),
+                                   "size",
+                                   BB);
+
+  GlobalVariable *GV = M->getGlobalVariable("__baggybounds_size_table_begin");
+  LoadInst *TBL = new LoadInst(GV, "tbl", BB);
+
+  // Get the pointer to the actual slot size.
+  ArrayRef<Value *> ARefTableBase (BIndex);
+  GetElementPtrInst *GEPI = GetElementPtrInst::Create (Type::getInt8Ty(M->getContext()),
+                                                       TBL,
+                                                       ARefTableBase,
+                                                       "index",
+                                                       BB);
+  LoadInst * LObjSizeBeforeCast = new LoadInst (GEPI,
+                                                "obj_size",
+                                                BB);
+  CastInst *LObjSize =
+      CastInst::CreateIntegerCast (LObjSizeBeforeCast,
+                                   Type::getInt64Ty(M->getContext()),
+                                   false,
+                                   "casted", BB);
+
+  ICmpInst * ICmpCompareZero = new ICmpInst (*BB,
+                                             CmpInst::ICMP_EQ,
+                                             LObjSize,
+                                             ConstantInt::get (LObjSize->getType(), 0, false),
+                                             "cmp_zero");
+
+  BranchInst::Create (GoodBB,
+                      BBElementNotZero,
+                      ICmpCompareZero,
+                      BB);
+
+
+
+  BinaryOperator *BSize;
+  BSize = BinaryOperator::Create (Instruction::Shl,
+                                  ConstantInt::get (LObjSize->getType(),1, false),
+                                  LObjSize,
+                                  "size",
+                                  BBElementNotZero);
+  BinaryOperator *BSizeSubOne;
+  BSizeSubOne = BinaryOperator::Create (Instruction::Sub,
+                                        BSize,
+                                        ConstantInt::get (BSize->getType(),1, false),
+                                        "sub_one",
+                                        BBElementNotZero);
+  BinaryOperator *BInv;
+  BInv = BinaryOperator::Create (Instruction::Xor,
+                                 BSizeSubOne,
+                                 ConstantInt::get (BSize->getType(), -1, false),
+                                 "inv",
+                                 BBElementNotZero);
+  BinaryOperator *BBase;
+  BBase = BinaryOperator::Create (Instruction::And,
+                                  Ptr,
+                                  BInv,
+                                  "inv",
+                                  BBElementNotZero);
+
+  BinaryOperator *BIndexMemset;
+  BIndexMemset = BinaryOperator::Create (Instruction::LShr,
+                                  BBase,
+                                  ConstantInt::get (BSize->getType(), 4, false),
+                                  "indexmemset",
+                                  BBElementNotZero);
+
+  BinaryOperator *BFixedSize;
+  BFixedSize = BinaryOperator::Create (Instruction::Sub,
+                                       LObjSize,
+                                       ConstantInt::get (LObjSize->getType(), 4, false),
+                                       "fixedsize",
+                                       BBElementNotZero);
+
+  BinaryOperator *BRange;
+  BRange = BinaryOperator::Create (Instruction::Shl,
+                                   ConstantInt::get (LObjSize->getType(), 1, false),
+                                   BFixedSize,
+                                   "range",
+                                   BBElementNotZero);
+
+
+  ArrayRef<Value *> ARefTableBaseMemset (BIndexMemset);
+  GetElementPtrInst *GEPIMemset = GetElementPtrInst::Create (Type::getInt8Ty(M->getContext()),
+                                                             TBL,
+                                                             ARefTableBaseMemset,
+                                                             "index",
+                                                             BBElementNotZero);
+
+
+  Function * Memset = cast<Function>(M->getFunction ("llvm.memset.p0i8.i32"));
+  std::vector<Value *> args;
+
+  ConstantInt *CAllocSize = ConstantInt::get (Type::getInt8Ty(M->getContext()),
+                                              0, false);
+  CastInst *CRange =
+      CastInst::CreateIntegerCast (BRange,
+                                   Type::getInt32Ty(M->getContext()),
+                                   false,
+                                   "casted", BBElementNotZero);
+
+
+  args.push_back (GEPIMemset);
+  args.push_back (CAllocSize);
+  args.push_back (CRange);
+  const DataLayout & TD = M->getDataLayout();
+  args.push_back (ConstantInt::get(Type::getInt32Ty(M->getContext()),
+                                   TD.getABITypeAlignment(
+                                       Type::getInt8Ty(M->getContext()))));
+  args.push_back (ConstantInt::get(Type::getInt1Ty(M->getContext()), 0));
+  CallInst::Create (Memset, args, "", BBElementNotZero);
+
+  return BBElementNotZero;
+}
+
+
 
 //
 // Function: insertBBPoolCheck()
@@ -745,6 +1140,23 @@ template <bool isRewriteOOBDisabled>
 bool
 llvm::InlineBBACRuntimeFunctions<isRewriteOOBDisabled>
 ::createGlobalDeclarations (Module & M) {
+  Type * VoidType  = Type::getVoidTy(M.getContext());
+  Type * Int1Type  = IntegerType::getInt1Ty(M.getContext());
+  Type * Int8Type  = IntegerType::getInt8Ty(M.getContext());
+  Type * Int32Type = IntegerType::getInt32Ty(M.getContext());
+  Type * VoidPtrType = PointerType::getUnqual(Int8Type);
+
+  //
+  // Add the memset function to the program.
+  //
+  M.getOrInsertFunction ("llvm.memset.p0i8.i32",
+                         VoidType,
+                         VoidPtrType,
+                         Int8Type,
+                         Int32Type,
+                         Int32Type,
+                         Int1Type,
+                         NULL);
   const DataLayout & TD = M.getDataLayout();
   GlobalVariable *GV = M.getGlobalVariable("__baggybounds_size_table_begin");
   if (!GV) {
@@ -982,32 +1394,6 @@ llvm::InlineBBACRuntimeFunctions<T>::createPoolRegisterBodyFor (Function * F) {
   Value *SourceFilep = arg++;
   Value *LineNo = arg;
 
-  Constant *FPoolRegisterDebug =
-      F->getParent()->getOrInsertFunction("__sc_bb_src_poolregister",
-                                          Type::getVoidTy(Context),
-                                          Pool->getType(),
-                                          AllocaPtr->getType(),
-                                          NumBytes->getType(),
-                                          Tag->getType(),
-                                          SourceFilep->getType(),
-                                          LineNo->getType(),
-                                          NULL);
-
-  Value* TmpArgArray[6];
-  TmpArgArray[0] = Pool;
-  TmpArgArray[1] = AllocaPtr;
-  TmpArgArray[2] = NumBytes;
-  TmpArgArray[3] = Tag;
-  TmpArgArray[4] = SourceFilep;
-  TmpArgArray[5] = LineNo;
-
-  CallInst *CallFPoolRegisterDebug
-      = CallInst::Create(FPoolRegisterDebug,
-                         ArrayRef<Value*>(TmpArgArray, 6),
-                         "",
-                         AllocaPtrNotNullBB);
-  ReturnInst::Create (Context, AllocaPtrNotNullBB);
-
   ICmpInst * CompareNumBytes = new ICmpInst (*EntryBB,
                                              CmpInst::ICMP_EQ,
                                              NumBytes,
@@ -1023,6 +1409,17 @@ llvm::InlineBBACRuntimeFunctions<T>::createPoolRegisterBodyFor (Function * F) {
                                               "cmp_alloca_ptr_null");
 
   BranchInst::Create (GoodBB, AllocaPtrNotNullBB, CompareAllocaPtr, NumBytesNotZeroBB);
+
+
+  CastInst *CILength =
+      CastInst::CreateIntegerCast (NumBytes,
+                                   AllocaPtrInt->getType(),
+                                   false,
+                                   "casted", AllocaPtrNotNullBB);
+
+  BasicBlock* ReturnBB =
+      insertInternalRegister(AllocaPtrInt, CILength, AllocaPtrNotNullBB);
+  ReturnInst::Create (Context, ReturnBB);
 
   F->setLinkage (GlobalValue::InternalLinkage);
   return true;
@@ -1076,30 +1473,6 @@ llvm::InlineBBACRuntimeFunctions<T>::createPoolUnregisterBodyFor(Function * F) {
   Value *SourceFilep = arg++;
   Value *LineNo = arg;
 
-  Constant *FPoolRegisterDebug =
-      F->getParent()->getOrInsertFunction("__sc_bb_poolunregister",
-                                          Type::getVoidTy(Context),
-                                          Pool->getType(),
-                                          AllocaPtr->getType(),
-                                          Tag->getType(),
-                                          SourceFilep->getType(),
-                                          LineNo->getType(),
-                                          NULL);
-
-  Value* TmpArgArray[5];
-  TmpArgArray[0] = Pool;
-  TmpArgArray[1] = AllocaPtr;
-  TmpArgArray[2] = Tag;
-  TmpArgArray[3] = SourceFilep;
-  TmpArgArray[4] = LineNo;
-
-  CallInst *CallFPoolRegisterDebug
-      = CallInst::Create(FPoolRegisterDebug,
-                         ArrayRef<Value*>(TmpArgArray, 5),
-                         "",
-                         AllocaPtrNotNullBB);
-  ReturnInst::Create (Context, AllocaPtrNotNullBB);
-
   ICmpInst * CompareAllocaPtr = new ICmpInst (*EntryBB,
                                               CmpInst::ICMP_EQ,
                                               AllocaPtrInt,
@@ -1107,6 +1480,11 @@ llvm::InlineBBACRuntimeFunctions<T>::createPoolUnregisterBodyFor(Function * F) {
                                               "cmp_alloca_ptr_null");
 
   BranchInst::Create (GoodBB, AllocaPtrNotNullBB, CompareAllocaPtr, EntryBB);
+
+
+  BasicBlock *BBElementNotZero
+      = insertInternalUnregister(AllocaPtrInt, GoodBB, AllocaPtrNotNullBB);
+  ReturnInst::Create (F->getContext(), BBElementNotZero);
 
   F->setLinkage (GlobalValue::InternalLinkage);
   return true;
@@ -1116,14 +1494,21 @@ template <bool T>
 bool
 llvm::InlineBBACRuntimeFunctions<T>::runOnModule (Module &M) {
   createGlobalDeclarations (M);
+
   createPoolCheckUIBodyFor (M.getFunction("poolcheckui_debug"));
   createBoundsCheckUIBodyFor (M.getFunction("boundscheckui_debug"));
   createPoolRegisterBodyFor (M.getFunction("pool_register_debug"));
+  createPoolRegisterBodyFor (M.getFunction("pool_register_stack_debug"));
+  createPoolRegisterBodyFor (M.getFunction("pool_register_global_debug"));
   createPoolUnregisterBodyFor (M.getFunction("pool_unregister_debug"));
+  createPoolUnregisterBodyFor (M.getFunction("pool_unregister_stack_debug"));
 
   inlineCheck (M.getFunction ("poolcheckui_debug"));
   inlineCheck (M.getFunction ("boundscheckui_debug"));
   inlineCheck (M.getFunction ("pool_register_debug"));
+  inlineCheck (M.getFunction ("pool_register_stack_debug"));
+  inlineCheck (M.getFunction ("pool_register_global_debug"));
   inlineCheck (M.getFunction ("pool_unregister_debug"));
+  inlineCheck (M.getFunction ("pool_unregister_stack_debug"));
   return true;
 }
