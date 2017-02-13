@@ -549,6 +549,7 @@ insertGetBBACRange (Value *Ptr, Value *Length ,BasicBlock *BB) {
 //
 // Function: insertFindBinaryLogarithm ()
 //
+static
 Value *
 insertFindBinaryLogarithm (Value *Val, BasicBlock* ResultBB, BasicBlock *BB) {
   assert (isa<IntegerType>(Val->getType()));
@@ -615,6 +616,7 @@ insertFindBinaryLogarithm (Value *Val, BasicBlock* ResultBB, BasicBlock *BB) {
 //  ObjStart - The lower bound
 //  ObjEnd - The Upper bound
 //
+static
 BasicBlock *
 insertInternalRegister (Value *Ptr, Value *Length ,
                         BasicBlock *BB) {
@@ -805,6 +807,7 @@ insertInternalRegister (Value *Ptr, Value *Length ,
   return BBAfterFindLog;
 }
 
+static
 BasicBlock *
 insertInternalUnregister (Value *Ptr ,
                           BasicBlock *GoodBB,
