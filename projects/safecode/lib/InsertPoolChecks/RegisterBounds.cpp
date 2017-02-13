@@ -74,6 +74,10 @@ RegisterGlobalVariables<registerExternal>::runOnModule(llvm::Module & M) {
   Constant * CF = M.getOrInsertFunction ("sc.register_globals", VoidTy, NULL);
   Function * F = dyn_cast<Function>(CF);
 
+  F->setDoesNotThrow();
+  F->setLinkage(GlobalValue::InternalLinkage);
+
+
   //
   // Create the basic registration function.
   //
