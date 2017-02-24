@@ -505,11 +505,11 @@ void EmitAssemblyHelper::CreatePasses() {
     MPM->add (new RegisterStackObjPass ()); // register
     MPM->add (new RegisterRuntimeInitializer(CodeGenOpts.MemSafetyLogFile.c_str())); //register
     MPM->add (new DebugInstrument());
-    MPM->add (createInstrumentMemoryAccessesPass()); // access + check
+    //MPM->add (createInstrumentMemoryAccessesPass()); // access + check
     MPM->add (new ScalarEvolution());
-    //    MPM->add (new ArrayBoundsCheckLocal());
+    MPM->add (new ArrayBoundsCheckLocal());
     // if (!CodeGenOpts.DisableRewriteOOB)
-    //  MPM->add (new InsertGEPChecks()); // access + check
+    MPM->add (new InsertGEPChecks()); // access + check
     MPM->add (createSpecializeCMSCallsPass()); //access + cehck
     MPM->add (createExactCheckOptPass());
 

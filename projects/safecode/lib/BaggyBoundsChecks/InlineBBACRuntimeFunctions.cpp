@@ -96,7 +96,6 @@ llvm::InlineBBACRuntimeFunctions<T>::inlineCheck (Function * F) {
     InlineFunction (CallsToInline[index], IFI);
     ++ InlinedBBACChecks;
   }
-
   return modified;
 }
 
@@ -307,19 +306,25 @@ insertIsSrcDstEqualCheck (Value *Src,
   //
   assert (isa<IntegerType>(Src->getType()));
   assert (isa<IntegerType>(Dst->getType()));
-  BasicBlock * SrcIsNotRewrittenBB = BasicBlock::Create (Src->getContext(),
+  /*  BasicBlock * SrcIsNotRewrittenBB = BasicBlock::Create (Src->getContext(),
                                                          "src_is_not_rewritten",
-                                                         BB->getParent());
+                                                         BB->getParent());*/
 
-  insertIsRewrittenPtr (Src, BB, SrcIsNotRewrittenBB, NotPassIsSrcDstEqualCheckBB);
+  //  insertIsRewrittenPtr (Src, BB, SrcIsNotRewrittenBB, NotPassIsSrcDstEqualCheckBB);
 
-  ICmpInst * Compare = new ICmpInst (*SrcIsNotRewrittenBB,
+  /*  ICmpInst * Compare = new ICmpInst (*SrcIsNotRewrittenBB,
+                                     CmpInst::ICMP_EQ,
+                                     Src,
+                                     Dst,
+                                     "cmp_is_src_dst_equal");*/
+  ICmpInst * Compare = new ICmpInst (*BB,
                                      CmpInst::ICMP_EQ,
                                      Src,
                                      Dst,
                                      "cmp_is_src_dst_equal");
 
-  BranchInst::Create (GoodBB, NotPassIsSrcDstEqualCheckBB, Compare, SrcIsNotRewrittenBB);
+  //  BranchInst::Create (GoodBB, NotPassIsSrcDstEqualCheckBB, Compare, SrcIsNotRewrittenBB);
+  BranchInst::Create (GoodBB, NotPassIsSrcDstEqualCheckBB, Compare, BB);
 }
 
 //
@@ -1498,16 +1503,18 @@ bool
 llvm::InlineBBACRuntimeFunctions<T>::runOnModule (Module &M) {
   createGlobalDeclarations (M);
 
-  createPoolCheckUIBodyFor (M.getFunction("poolcheckui_debug"));
+  //  createPoolCheckUIBodyFor (M.getFunction("poolcheckui_debug"));
   createBoundsCheckUIBodyFor (M.getFunction("boundscheckui_debug"));
+  createBoundsCheckUIBodyFor (M.getFunction("boundscheck_debug"));
   createPoolRegisterBodyFor (M.getFunction("pool_register_debug"));
   createPoolRegisterBodyFor (M.getFunction("pool_register_stack_debug"));
   createPoolRegisterBodyFor (M.getFunction("pool_register_global_debug"));
   createPoolUnregisterBodyFor (M.getFunction("pool_unregister_debug"));
   createPoolUnregisterBodyFor (M.getFunction("pool_unregister_stack_debug"));
 
-  inlineCheck (M.getFunction ("poolcheckui_debug"));
+  //  inlineCheck (M.getFunction ("poolcheckui_debug"));
   inlineCheck (M.getFunction ("boundscheckui_debug"));
+  inlineCheck (M.getFunction ("boundscheck_debug"));
   inlineCheck (M.getFunction ("pool_register_debug"));
   inlineCheck (M.getFunction ("pool_register_stack_debug"));
   inlineCheck (M.getFunction ("pool_register_global_debug"));
