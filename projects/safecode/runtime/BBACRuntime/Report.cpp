@@ -99,6 +99,7 @@ ViolationInfo::print(std::ostream & OS) const {
 
 void
 ReportMemoryViolation(const ViolationInfo *v) {
+	return;
   // Flag for whether to terminate when an error is detected.
   extern unsigned StopOnError;
 

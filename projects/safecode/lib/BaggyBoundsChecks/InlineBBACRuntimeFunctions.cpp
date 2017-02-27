@@ -114,7 +114,7 @@ llvm::InlineBBACRuntimeFunctions<T>::inlineCheck (Function * F) {
 //
 static BasicBlock *
 createEmitLSReportBlock (Function & F, Value *Node, Value *SourceFilep, Value *LineNo) {
-  Type *VoidTy = Type::getVoidTy(F.getContext());
+/*  Type *VoidTy = Type::getVoidTy(F.getContext());
   Constant * EmitReport = F.getParent()->getOrInsertFunction("__sc_bb_emit_report",
                                                              VoidTy,
                                                              Node->getType(),
@@ -141,7 +141,11 @@ createEmitLSReportBlock (Function & F, Value *Node, Value *SourceFilep, Value *L
   //
   new UnreachableInst (F.getContext(), FaultBB);
 
-  return FaultBB;
+*/
+
+	  BasicBlock *GoodBB = BasicBlock::Create (F.getContext(), "good2", &F);
+	    ReturnInst::Create (F.getContext(), GoodBB);
+  return GoodBB;
 }
 
 //
@@ -1499,6 +1503,7 @@ llvm::InlineBBACRuntimeFunctions<T>::runOnModule (Module &M) {
   createGlobalDeclarations (M);
 
   createPoolCheckUIBodyFor (M.getFunction("poolcheckui_debug"));
+  createPoolCheckUIBodyFor (M.getFunction("poolcheck_debug"));
   createBoundsCheckUIBodyFor (M.getFunction("boundscheckui_debug"));
   createPoolRegisterBodyFor (M.getFunction("pool_register_debug"));
   createPoolRegisterBodyFor (M.getFunction("pool_register_stack_debug"));
@@ -1507,6 +1512,7 @@ llvm::InlineBBACRuntimeFunctions<T>::runOnModule (Module &M) {
   createPoolUnregisterBodyFor (M.getFunction("pool_unregister_stack_debug"));
 
   inlineCheck (M.getFunction ("poolcheckui_debug"));
+  inlineCheck (M.getFunction ("poolcheck_debug"));
   inlineCheck (M.getFunction ("boundscheckui_debug"));
   inlineCheck (M.getFunction ("pool_register_debug"));
   inlineCheck (M.getFunction ("pool_register_stack_debug"));

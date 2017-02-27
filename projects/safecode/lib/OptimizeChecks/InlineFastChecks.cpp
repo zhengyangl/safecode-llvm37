@@ -282,7 +282,8 @@ llvm::InlineFastChecks::createBodyFor (Function * F) {
   //
   LLVMContext & Context = F->getContext();
   BasicBlock * entryBB = BasicBlock::Create (Context, "entry", F);
-
+  ReturnInst::Create (F->getContext(), entryBB);
+  /*
   //
   // Create a basic block that just returns.
   //
@@ -345,7 +346,7 @@ llvm::InlineFastChecks::createBodyFor (Function * F) {
 
   //
   // Make the function internal.
-  //
+  //*/
   F->setLinkage (GlobalValue::InternalLinkage);
   return true;
 }
@@ -377,7 +378,8 @@ llvm::InlineFastChecks::createDebugBodyFor (Function * F) {
   //
   LLVMContext & Context = F->getContext();
   BasicBlock * entryBB = BasicBlock::Create (Context, "entry", F);
-
+    ReturnInst::Create (F->getContext(), entryBB);
+    /*
   //
   // Create a basic block that just returns.
   //
@@ -440,7 +442,8 @@ llvm::InlineFastChecks::createDebugBodyFor (Function * F) {
 
   //
   // Make the function internal.
-  //
+  //*/
+  
   F->setLinkage (GlobalValue::InternalLinkage);
   return true;
 }
