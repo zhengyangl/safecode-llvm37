@@ -296,16 +296,17 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
     ty = ArrayType::get(Int8Type, objectSize);
   }
   
-  StructType *newType = StructType::get(ty,
-                              newType1,
-                              metadataType,
-                              NULL);
-    
+  std::vector<Type *> StructElements;
+  StructElements.push_back (ty);
+  StructElements.push_back (newType1);
+  StructElements.push_back (metadataType);
+  StructType *newType = StructType::create(StructElements);
+
   //
   // Create the new alloca instruction and set its alignment.
   //
   AllocaInst * AI_new = new AllocaInst (newType,
-                                             0,
+                                        0,
                                         (1<<size),
                                         "baggy." + AI->getName(),
                                         AI);
@@ -323,11 +324,21 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   //
   // Create a GEP that accesses the first element of this new structure.
   //
-  Value *idx1[2] = {Zero, Zero};
-  Instruction *init = GetElementPtrInst::Create(newType, AI_new,
-                                                idx1,
-                                                Twine(""),
-                                                AI);
+  Instruction * init;
+  if (AI->isArrayAllocation()) {
+    Value *idx1[3] = {Zero, Zero, Zero};
+    init = GetElementPtrInst::Create(newType, AI_new,
+                                     idx1,
+                                     Twine(""),
+                                     AI);
+  } else {
+    Value *idx1[2] = {Zero, Zero};
+    init = GetElementPtrInst::Create(newType, AI_new,
+                                     idx1,
+                                     Twine(""),
+                                     AI);
+  }
+
   AI->replaceAllUsesWith(init);
   AI->removeFromParent(); 
   AI_new->setName(AI->getName());
