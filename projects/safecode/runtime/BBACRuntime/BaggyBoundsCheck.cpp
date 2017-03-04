@@ -594,18 +594,7 @@ __sc_bb_poolunregister_stack_debug (DebugPoolTy *Pool,
                                     TAG,
                                     const char* SourceFilep,
                                     unsigned lineno) {
-  uintptr_t Source = (uintptr_t)allocaptr;
-
-  unsigned  e;
-  e = __baggybounds_size_table_begin[Source >> SLOT_SIZE];
-  if(e == 0 ) {
-    return;
-  }
-  uintptr_t size = 1 << e;
-  uintptr_t base = Source & ~(size -1);
-  unsigned long index = base >> SLOT_SIZE;
-  unsigned int slots = 1<<(e - SLOT_SIZE);
-  memset(__baggybounds_size_table_begin + index, 0, slots);
+  __sc_bb_poolunregister_debug (Pool, allocaptr, tag, SourceFilep, lineno);
 }
 
 void *
