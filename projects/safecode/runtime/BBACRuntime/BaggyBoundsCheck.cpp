@@ -72,6 +72,7 @@ using namespace NAMESPACE_SC;
 
 /// UNUSED in production version
 FILE * ReportLog;
+FILE * Dump;
 
 // signal handler
 static void bus_error_handler(int, siginfo_t *, void *);
@@ -140,6 +141,7 @@ __sc_bb_pooldestroy(DebugPoolTy *Pool) {
 void
 pool_init_runtime(unsigned Dangling, unsigned RewriteOOB, unsigned Terminate) {
   // Flag for whether we've already initialized the run-time
+  Dump = fopen("/localdisk/zliu100/dump", "w");
   static int initialized = 0;
 
   //
@@ -252,6 +254,8 @@ __internal_register(DebugPoolTy *Pool,
                     TAG,
                     const char* SourceFilep,
                     unsigned lineno) {
+  fprintf(Dump,"%d\n", NumBytes);
+  fflush(Dump);
 #ifdef SC_OBJ_COUNT
   ++ __sc_obj_count;
 #endif
