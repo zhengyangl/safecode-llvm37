@@ -505,19 +505,19 @@ void EmitAssemblyHelper::CreatePasses() {
     MPM->add (new RegisterStackObjPass ()); // register
     MPM->add (new RegisterRuntimeInitializer(CodeGenOpts.MemSafetyLogFile.c_str())); //register
     MPM->add (new DebugInstrument());
-    MPM->add (createInstrumentMemoryAccessesPass()); // access + check
+    //    MPM->add (createInstrumentMemoryAccessesPass()); // access + check
     MPM->add (new ScalarEvolution());
     //    MPM->add (new ArrayBoundsCheckLocal());
     // if (!CodeGenOpts.DisableRewriteOOB)
     //  MPM->add (new InsertGEPChecks()); // access + check
-    MPM->add (createSpecializeCMSCallsPass()); //access + cehck
-    MPM->add (createExactCheckOptPass());
+    //    MPM->add (createSpecializeCMSCallsPass()); //access + cehck
+    //    MPM->add (createExactCheckOptPass());
 
     MPM->add (new DominatorTreeWrapperPass());
     MPM->add (new ScalarEvolution());
-    MPM->add (createOptimizeImpliedFastLSChecksPass());
+    //    MPM->add (createOptimizeImpliedFastLSChecksPass());
 
-    MPM->add (new OptimizeChecks());
+    //    MPM->add (new OptimizeChecks());
     /*if (CodeGenOpts.MemSafeTerminate) {
       MPM->add (llvm::createSCTerminatePass ());
       }*/
@@ -539,7 +539,7 @@ void EmitAssemblyHelper::CreatePasses() {
     /* if (!CodeGenOpts.DisableRewriteOOB)
           MPM->add (new RewriteOOB());*/
 
-    if(!CodeGenOpts.DisableInline)
+    /*    if(!CodeGenOpts.DisableInline)
     {
       MPM->add (new InlineFastChecks());
       if (CodeGenOpts.BaggyBounds) {
@@ -556,7 +556,7 @@ void EmitAssemblyHelper::CreatePasses() {
             MPM->add (new InlineBBCRuntimeFunctions<false>());
         }
       }
-    }
+      }*/
   }
   MPM->add (createPromoteMemoryToRegisterPass());
   PMBuilder.populateModulePassManager(*MPM);
